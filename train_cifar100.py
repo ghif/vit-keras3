@@ -30,7 +30,7 @@ patches = M.Patches(patch_size=conf.vit_config["image"]["patch_size"])(resized_i
 print(f"Patches per image: {patches.shape[1]}")
 print(f"Elements per patch: {patches.shape[-1]}")
 
-tools.display_patches(patches, conf.vit_config["image"]["patch_size"], 3)
+# tools.display_patches(patches, conf.vit_config["image"]["patch_size"], 3)
 
 vit_model = M.create_vit(
     input_shape, 
@@ -41,3 +41,40 @@ vit_model = M.create_vit(
 
 vit_model.layers[1].adapt(x_train)
 print(vit_model.summary())
+
+# Train the model
+optimizer = keras.optimizers.AdamW(
+    learning_rate=conf.vit_config["training"]["learning_rate"],
+    weight_decay=conf.vit_config["training"]["weight_decay"]
+)
+
+vit_model.compile(
+    optimizer=optimizer,
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    metrics=[
+        keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+        keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+    ],
+)
+
+# Checkpoint callback
+checkpoint_filepath = "models/vit_cifar100.weights.h5"
+checkpoint_callback = keras.callbacks.ModelCheckpoint(
+    checkpoint_filepath,
+    monitor="val_accuracy",
+    save_best_only=True,
+    save_weights_only=True,
+)
+
+history = vit_model.fit(
+    x=x_train,
+    y=y_train,
+    batch_size=conf.vit_config["training"]["batch_size"],
+    epochs=conf.vit_config["training"]["num_epochs"],
+    validation_split=0.1,
+    callbacks=[checkpoint_callback],
+)
+
+_, accuracy, top_5_accuracy = vit_model.evaluate(x_test, y_test, batch_size=conf.vit_config["training"]["batch_size"])
+print(f"Test accuracy: {round(accuracy * 100, 2)}%")
+print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
