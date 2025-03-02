@@ -1,6 +1,8 @@
 import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
+import json
+
 import keras
 from keras import ops
 
@@ -78,3 +80,9 @@ history = vit_model.fit(
 _, accuracy, top_5_accuracy = vit_model.evaluate(x_test, y_test, batch_size=conf.vit_config["training"]["batch_size"])
 print(f"Test accuracy: {round(accuracy * 100, 2)}%")
 print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
+
+# Store history
+history_dict = history.history
+
+with open("models/vit_cifar100_history.json", "w") as f:
+    json.dump(history_dict, f)
