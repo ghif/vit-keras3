@@ -13,6 +13,9 @@ import tools
 
 import config_base as conf
 
+# Constants
+MODEL_PREFIX = "vit_base_v2"
+
 # Prepare the data
 num_classes = 100
 input_shape = (32, 32, 3)
@@ -67,7 +70,7 @@ vit_model.compile(
 )
 
 # Checkpoint callback
-checkpoint_filepath = "models/vit_base_cifar100.weights.h5"
+checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
 checkpoint_callback = keras.callbacks.ModelCheckpoint(
     checkpoint_filepath,
     monitor="val_accuracy",
@@ -92,5 +95,5 @@ print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 # Store history
 history_dict = history.history
 
-with open("models/vit_base_cifar100_history.json", "w") as f:
+with open(f"models/{MODEL_PREFIX}_cifar100_history.json", "w") as f:
     json.dump(history_dict, f)
