@@ -2,8 +2,8 @@
 vit_config = {
     # Training parameters
     "training": {
-        "learning_rate": 0.0008,
-        "weight_decay": 0.1,
+        "learning_rate": 0.0001,
+        "weight_decay": 0.03,
         "batch_size": 128,
         "num_epochs": 100,  # For real training, use num_epochs=100. 10 is a test value
     },
