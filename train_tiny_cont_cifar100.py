@@ -62,6 +62,10 @@ vit_model.compile(
 # Checkpoint callback
 checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
 
+if os.path.exists(checkpoint_filepath):
+   MODEL_PREFIX = "vit_tiny_v2_cont"
+   checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
+
 checkpoint_callback = keras.callbacks.ModelCheckpoint(
     checkpoint_filepath,
     monitor="val_accuracy",
