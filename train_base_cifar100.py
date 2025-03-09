@@ -47,6 +47,9 @@ vit_model = M.create_vit(
 vit_model.layers[1].adapt(x_train)
 print(vit_model.summary())
 
+for i, layer in enumerate(vit_model.layers):
+    print(f"[{i}] {layer.name} - {layer.dtype_policy}")
+
 # Train the model
 optimizer = keras.optimizers.Adam(
     learning_rate=conf.vit_config["training"]["learning_rate"],

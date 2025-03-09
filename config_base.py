@@ -22,9 +22,7 @@ vit_config = {
         "transformer_layers": 2,
         "num_heads": 12,
         "mlp_size": 3072,  # Size of the transformer layers
-        
-        
         # # MLP head parameters
-        # "mlp_head_units": [3072],  # Size of the dense layers of the final classifier
+        # "mlp_head_units": [2048],  # Size of the dense layers of the final classifier
     }
 }

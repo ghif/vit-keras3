@@ -194,13 +194,13 @@ def create_vit(input_shape, num_classes, img_config, model_config):
     # Create a [batch_size, projection_dim] tensor.
     representation = layers.LayerNormalization(epsilon=1e-6)(encoded_patches)
     representation = layers.Flatten()(representation)
-    representation = layers.Dropout(0.5)(representation)
+    features = layers.Dropout(0.1)(representation)
 
     # # Add MLP
-    # features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
+    # features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.1)
     
     # Classify outputs
-    logits = layers.Dense(num_classes, dtype="float32")(representation)
+    logits = layers.Dense(num_classes, dtype="float32")(features)
 
     # Create the Keras model
     model = keras.Model(inputs=inputs, outputs=logits)
