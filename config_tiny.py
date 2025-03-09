@@ -23,7 +23,7 @@ vit_config = {
         "num_heads": 12,
         "mlp_size": 3072,  # Size of the transformer layers
         "encoder_dropout_rate": 0.1,
-        "head_dropout_rate": 0.5,
+        "head_dropout_rate": 0.1,
         # # MLP head parameters
         # "mlp_head_units": [2048],  # Size of the dense layers of the final classifier
     }
