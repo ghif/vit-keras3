@@ -2,16 +2,20 @@ import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import json
-
 import keras
-from keras import ops
-
-import numpy as np
-
 import models as M
-import tools
-
 import config_tiny as conf
+import tensorflow_datasets as tfds
+
+def get_dataset(batch_size, is_training=True):
+  split = 'train' if is_training else 'test'
+  dataset, info = tfds.load('cifar100', split=split, with_info=True, as_supervised=True, try_gcs=False)
+
+  if is_training:
+    dataset = dataset.shuffle(10000)
+
+  dataset = dataset.batch(batch_size)
+  return dataset, info
 
 # Constants
 MODEL_PREFIX = "vit_tiny"
@@ -20,22 +24,8 @@ MODEL_PREFIX = "vit_tiny"
 num_classes = 100
 input_shape = (32, 32, 3)
 
-(x_train, y_train), (x_test, y_test) = keras.datasets.cifar100.load_data()
-
-print(f"x_train shape: {x_train.shape} - y_train shape: {y_train.shape}")
-print(f"x_test shape: {x_test.shape} - y_test shape: {y_test.shape}")
-
-
-image = x_train[np.random.choice(range(x_train.shape[0]))]
-resized_image = ops.image.resize(
-    ops.convert_to_tensor([image]), size=(conf.vit_config["image"]["image_size"], conf.vit_config["image"]["image_size"])
-)
-
-patches = M.Patches(patch_size=conf.vit_config["image"]["patch_size"])(resized_image)
-print(f"Patches per image: {patches.shape[1]}")
-print(f"Elements per patch: {patches.shape[-1]}")
-
-# tools.display_patches(patches, conf.vit_config["image"]["patch_size"], 3)
+train_dataset, _ = get_dataset(conf.vit_config["training"]["batch_size"], is_training=True)
+test_dataset, _ = get_dataset(conf.vit_config["training"]["batch_size"], is_training=False)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
@@ -47,7 +37,7 @@ vit_model = M.create_vit(
     conf.vit_config["model"]
 )
 
-vit_model.layers[1].adapt(x_train)
+# vit_model.layers[1].adapt(x_train)
 print(vit_model.summary())
 
 for i, layer in enumerate(vit_model.layers):
@@ -71,6 +61,10 @@ vit_model.compile(
 
 # Checkpoint callback
 checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
+
+if os.path.exists(checkpoint_filepath):
+    vit_model.load_weights(checkpoint_filepath)
+
 checkpoint_callback = keras.callbacks.ModelCheckpoint(
     checkpoint_filepath,
     monitor="val_accuracy",
@@ -78,17 +72,16 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
     save_weights_only=True,
 )
 
+
 history = vit_model.fit(
-    x=x_train,
-    y=y_train,
+    train_dataset,
     batch_size=conf.vit_config["training"]["batch_size"],
     epochs=conf.vit_config["training"]["num_epochs"],
-    # validation_split=0.1,
-    validation_data=(x_test, y_test),
+    validation_data=test_dataset,
     callbacks=[checkpoint_callback],
 )
 
-loss, accuracy, top_5_accuracy = vit_model.evaluate(x_test, y_test, batch_size=conf.vit_config["training"]["batch_size"])
+loss, accuracy, top_5_accuracy = vit_model.evaluate(test_dataset, batch_size=conf.vit_config["training"]["batch_size"])
 print(f"Test loss: {loss}")
 print(f"Test accuracy: {round(accuracy * 100, 2)}%")
 print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
