@@ -48,9 +48,10 @@ vit_model.layers[1].adapt(x_train)
 print(vit_model.summary())
 
 # Train the model
-optimizer = keras.optimizers.AdamW(
+optimizer = keras.optimizers.Adam(
     learning_rate=conf.vit_config["training"]["learning_rate"],
-    weight_decay=conf.vit_config["training"]["weight_decay"]
+    weight_decay=conf.vit_config["training"]["weight_decay"],
+    global_clipnorm=1.0
 )
 
 vit_model.compile(
