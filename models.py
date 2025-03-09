@@ -17,6 +17,13 @@ def mlp(x, hidden_units, dropout_rate):
         x = layers.Dropout(dropout_rate)(x)
     return x
 
+def mlp_block(x, hidden_unit, dropout_rate):
+    y = layers.Dense(hidden_unit, activation=keras.activations.gelu)(x)
+    y = layers.Dropout(dropout_rate)(y)
+    y = layers.Dense(x.shape[-1])(y)
+    y = layers.Dropout(dropout_rate)(y)
+    return y
+
 def augment_and_resize(images, image_size):
     """
     Apply data augmentation and resize the input images.
@@ -142,8 +149,7 @@ def create_vit(input_shape, num_classes, img_config, model_config):
     projection_dim = model_config["projection_dim"]
     transformer_layers = model_config["transformer_layers"]
     num_heads = model_config["num_heads"]
-    transformer_units = model_config["transformer_units"]
-    mlp_head_units = model_config["mlp_head_units"]
+    mlp_size = model_config["mlp_size"]
 
     inputs = keras.Input(shape=input_shape)
 
@@ -167,6 +173,8 @@ def create_vit(input_shape, num_classes, img_config, model_config):
             dropout=0.1
         )(x1, x1)
 
+        # print(f"attention_output shape: {attention_output.shape}")
+
         # Skip connection 1
         x2 = layers.Add()([attention_output, encoded_patches])
 
@@ -174,9 +182,12 @@ def create_vit(input_shape, num_classes, img_config, model_config):
         x3 = layers.LayerNormalization(epsilon=1e-6)(x2)
 
         # MLP
-        x3 = mlp(x3, hidden_units=transformer_units, dropout_rate=0.1)
+        # x3 = mlp(x3, hidden_units=[projection_dim], dropout_rate=0.1)
+        x3 = mlp_block(x3, hidden_unit=mlp_size, dropout_rate=0.1)
 
         # Skip connection 2
+        # print(f"x2 shape: {x2.shape}")
+        # print(f"x3 shape: {x3.shape}")
         encoded_patches = layers.Add()([x3, x2])
     # end for
 
@@ -185,11 +196,11 @@ def create_vit(input_shape, num_classes, img_config, model_config):
     representation = layers.Flatten()(representation)
     representation = layers.Dropout(0.5)(representation)
 
-    # Add MLP
-    features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
+    # # Add MLP
+    # features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
     
     # Classify outputs
-    logits = layers.Dense(num_classes)(features)
+    logits = layers.Dense(num_classes)(representation)
 
     # Create the Keras model
     model = keras.Model(inputs=inputs, outputs=logits)
