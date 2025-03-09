@@ -18,7 +18,7 @@ def get_dataset(batch_size, is_training=True):
   return dataset, info
 
 # Constants
-MODEL_PREFIX = "vit_tiny"
+MODEL_PREFIX = "vit_tiny_v2"
 
 # Prepare the data
 num_classes = 100
