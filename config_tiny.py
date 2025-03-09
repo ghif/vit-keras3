@@ -10,9 +10,9 @@ vit_config = {
     
     # Image parameters
     "image": {
-        "image_size": 128,  # We'll resize input images to this size
+        "image_size": 96,  # We'll resize input images to this size
         "patch_size": 16,  # Size of the patches to be extract from the input images
-        "num_patches": (128 // 16) ** 2,  # Calculated from image_size and patch_size
+        "num_patches": (96 // 16) ** 2,  # Calculated from image_size and patch_size
     },
     
     # Model architecture parameters
