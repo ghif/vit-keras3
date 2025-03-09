@@ -63,8 +63,11 @@ vit_model.compile(
 checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
 
 if os.path.exists(checkpoint_filepath):
+   vit_model.load_weights(checkpoint_filepath)
    MODEL_PREFIX = "vit_tiny_v2_cont"
    checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
+
+
 
 checkpoint_callback = keras.callbacks.ModelCheckpoint(
     checkpoint_filepath,
@@ -73,6 +76,7 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
     save_weights_only=True,
 )
 
+print(f"The model will be saved in: {checkpoint_filepath}")
 
 history = vit_model.fit(
     train_dataset,
