@@ -11,10 +11,10 @@ import numpy as np
 import models as M
 import tools
 
-import config_base as conf
+import config_tiny as conf
 
 # Constants
-MODEL_PREFIX = "vit_base_v2"
+MODEL_PREFIX = "vit_tiny"
 
 # Prepare the data
 num_classes = 100
