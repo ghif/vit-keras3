@@ -80,7 +80,8 @@ history = vit_model.fit(
     y=y_train,
     batch_size=conf.vit_config["training"]["batch_size"],
     epochs=conf.vit_config["training"]["num_epochs"],
-    validation_split=0.1,
+    # validation_split=0.1,
+    validation_data=(x_test, y_test),
     callbacks=[checkpoint_callback],
 )
 

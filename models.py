@@ -150,6 +150,8 @@ def create_vit(input_shape, num_classes, img_config, model_config):
     transformer_layers = model_config["transformer_layers"]
     num_heads = model_config["num_heads"]
     mlp_size = model_config["mlp_size"]
+    encoder_dropout_rate = model_config["encoder_dropout_rate"]
+    head_dropout_rate = model_config["head_dropout_rate"]
 
     inputs = keras.Input(shape=input_shape)
 
@@ -170,7 +172,7 @@ def create_vit(input_shape, num_classes, img_config, model_config):
         attention_output = layers.MultiHeadAttention(
             num_heads=num_heads,
             key_dim=projection_dim,
-            dropout=0.1
+            dropout=encoder_dropout_rate
         )(x1, x1)
 
         # print(f"attention_output shape: {attention_output.shape}")
@@ -183,7 +185,7 @@ def create_vit(input_shape, num_classes, img_config, model_config):
 
         # MLP
         # x3 = mlp(x3, hidden_units=[projection_dim], dropout_rate=0.1)
-        x3 = mlp_block(x3, hidden_unit=mlp_size, dropout_rate=0.1)
+        x3 = mlp_block(x3, hidden_unit=mlp_size, dropout_rate=encoder_dropout_rate)
 
         # Skip connection 2
         # print(f"x2 shape: {x2.shape}")
@@ -194,7 +196,7 @@ def create_vit(input_shape, num_classes, img_config, model_config):
     # Create a [batch_size, projection_dim] tensor.
     representation = layers.LayerNormalization(epsilon=1e-6)(encoded_patches)
     representation = layers.Flatten()(representation)
-    features = layers.Dropout(0.5)(representation)
+    features = layers.Dropout(head_dropout_rate)(representation)
 
     # # Add MLP
     # features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.1)
