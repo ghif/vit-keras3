@@ -200,7 +200,7 @@ def create_vit(input_shape, num_classes, img_config, model_config):
     # features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.5)
     
     # Classify outputs
-    logits = layers.Dense(num_classes)(representation)
+    logits = layers.Dense(num_classes, dtype="float32")(representation)
 
     # Create the Keras model
     model = keras.Model(inputs=inputs, outputs=logits)

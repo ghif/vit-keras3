@@ -34,6 +34,9 @@ print(f"Elements per patch: {patches.shape[-1]}")
 
 # tools.display_patches(patches, conf.vit_config["image"]["patch_size"], 3)
 
+# Use mixed precision
+keras.mixed_precision.set_global_policy("mixed_float16")
+
 vit_model = M.create_vit(
     input_shape, 
     num_classes,
