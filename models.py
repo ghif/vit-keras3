@@ -194,7 +194,7 @@ def create_vit(input_shape, num_classes, img_config, model_config):
     # Create a [batch_size, projection_dim] tensor.
     representation = layers.LayerNormalization(epsilon=1e-6)(encoded_patches)
     representation = layers.Flatten()(representation)
-    features = layers.Dropout(0.1)(representation)
+    features = layers.Dropout(0.5)(representation)
 
     # # Add MLP
     # features = mlp(representation, hidden_units=mlp_head_units, dropout_rate=0.1)
