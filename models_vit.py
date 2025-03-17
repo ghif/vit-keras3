@@ -2,46 +2,6 @@ import keras
 from keras import layers
 from keras import ops
 
-def mlp(x, hidden_units, dropout_rate):
-    """
-    Create a multi-layer perceptron.
-    Args:
-        x (Tensor): Input tensor.
-        hidden_units (list): List of integers with the number of units in each hidden layer.
-        dropout_rate (float): Dropout rate.
-    Returns:
-        Tensor: Output tensor.
-    """
-    for units in hidden_units:
-        x = layers.Dense(units, activation=keras.activations.gelu)(x)
-        x = layers.Dropout(dropout_rate)(x)
-    return x
-
-def mlp_block(x, mlp_dim, dropout_rate):
-    y = layers.Dense(mlp_dim, activation=keras.activations.gelu)(x)
-    y = layers.Dropout(dropout_rate)(y)
-    y = layers.Dense(x.shape[-1])(y)
-    y = layers.Dropout(dropout_rate)(y)
-    return y
-
-def augment_and_resize(images, image_size):
-    """
-    Apply data augmentation and resize the input images.
-
-    Args:
-        images (Tensor): A batch of images with shape (batch_size, height, width, channels).
-        image_size (int): The size of the output images.
-    Returns:
-        Tensor: The augmented and resized batch of images.
-    """
-    z = layers.Normalization()(images)
-    z = layers.Resizing(image_size, image_size)(z)
-    z = layers.RandomFlip("horizontal")(z)
-    z = layers.RandomRotation(factor=0.02)(z)
-    z = layers.RandomZoom(height_factor=0.2, width_factor=0.2)(z)
-    return z
-
-
 class Patches(layers.Layer):
     """Class to convert images into patches.
     This layer converts input images into a sequence of patches. The patches are created
@@ -130,6 +90,40 @@ class PatchEncoder(layers.Layer):
         config.update({"num_patches": self.num_patches})
         return config
 
+def mlp_block(x, mlp_dim, dropout_rate):
+    """
+    Create an MLP block.
+
+    Args:
+        x (Tensor): Input tensor.
+        mlp_dim (int): Hidden dimension of the MLP block.
+        dropout_rate (float): Dropout rate for the block.
+    Returns:
+        Output tensor.
+    """
+    y = layers.Dense(mlp_dim, activation=keras.activations.gelu)(x)
+    y = layers.Dropout(dropout_rate)(y)
+    y = layers.Dense(x.shape[-1])(y)
+    y = layers.Dropout(dropout_rate)(y)
+    return y
+
+def augment_and_resize(images, image_size):
+    """
+    Apply data augmentation and resize the input images.
+
+    Args:
+        images (Tensor): A batch of images with shape (batch_size, height, width, channels).
+        image_size (int): The size of the output images.
+    Returns:
+        Tensor: The augmented and resized batch of images.
+    """
+    z = layers.Normalization()(images)
+    z = layers.Resizing(image_size, image_size)(z)
+    z = layers.RandomFlip("horizontal")(z)
+    z = layers.RandomRotation(factor=0.02)(z)
+    z = layers.RandomZoom(height_factor=0.2, width_factor=0.2)(z)
+    return z
+
 def create_vit(input_shape, num_classes, img_config, model_config):
     """
     Create a Vision Transformer model.
@@ -207,3 +201,119 @@ def create_vit(input_shape, num_classes, img_config, model_config):
     # Create the Keras model
     model = keras.Model(inputs=inputs, outputs=logits)
     return model
+
+def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate):
+    """
+    Create an Encoder 1D block.
+    Args:
+        inputs (Tensor): Input tensor.
+        num_heads (int): Number of attention heads.
+        hidden_dim (int): Hidden dimension of the feedforward network.
+        mlp_dim (int): Hidden dimension of the MLP block.
+        attention_dropout_rate (float): Dropout rate for the attention layer.
+        dropout_rate (float): Dropout rate for the block.
+    Returns:
+        Output tensor.
+    """
+    # Layer normalization 1
+    x = layers.LayerNormalization(epsilon=1e-6)(inputs)
+
+    key_dim = hidden_dim // num_heads
+
+    # Multi Head Attention layer
+    x = layers.MultiHeadAttention(
+        num_heads=num_heads,
+        key_dim=key_dim,
+        dropout=attention_dropout_rate
+    )(x, x)
+
+    # Dropout
+    x = layers.Dropout(dropout_rate)(x)
+
+    # Skip connection 1
+    x = layers.Add()([x, inputs])
+
+    # MLP block
+    y = layers.LayerNormalization(epsilon=1e-6)(x)
+    y = mlp_block(y, mlp_dim, dropout_rate)
+    y = layers.Add()([y, x])
+
+
+    # Skip connection 2
+    return y
+
+def vit_encoder(inputs, num_layers, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate):
+    """
+    Create a Vision Transformer encoder.
+    Args:
+        inputs (Tensor): Input tensor.
+        num_layers (int): Number of encoder layers.
+        num_heads (int): Number of attention heads.
+        hidden_dim (int): Hidden dimension of the feedforward network.
+        mlp_dim (int): Hidden dimension of the MLP block.
+        attention_dropout_rate (float): Dropout rate for the attention layer.
+        dropout_rate (float): Dropout rate for the block.
+    Returns:
+        Output tensor.
+    """
+    x = layers.Dropout(dropout_rate)(inputs)
+    for _ in range(num_layers):
+        x = encoder1d_block(
+            x, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate
+        )
+    return x
+
+def vit_backbone(orig_image_shape, image_shape, patch_size, num_layers, num_heads, mlp_dim, attention_dropout_rate, dropout_rate):
+    num_patches = (image_shape[0] // patch_size) * (image_shape[1] // patch_size)
+    hidden_dim = patch_size * patch_size * 3
+
+    inputs = keras.Input(shape=orig_image_shape)
+    augmented = augment_and_resize(inputs, image_shape[0])
+    patches = Patches(patch_size)(augmented)
+    encoded_patches = PatchEncoder(num_patches, hidden_dim)(patches)
+
+    y = vit_encoder(
+        encoded_patches, num_layers, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate
+    )
+    return keras.Model(inputs=inputs, outputs=y)
+
+def vit_classifier(orig_image_shape, image_shape, patch_size, num_layers, num_heads, mlp_dim, attention_dropout_rate, dropout_rate, num_classes):
+    backbone = vit_backbone(
+        orig_image_shape=orig_image_shape,
+        image_shape=image_shape,
+        patch_size=patch_size,
+        num_layers=num_layers,
+        num_heads=num_heads,
+        mlp_dim=mlp_dim,
+        attention_dropout_rate=attention_dropout_rate,
+        dropout_rate=dropout_rate
+    )
+    inputs = backbone.inputs
+
+    features = backbone(inputs)
+
+    h = layers.GlobalAveragePooling1D()(features)
+
+    h = layers.Dropout(dropout_rate)(h)
+    logits = layers.Dense(num_classes, dtype="float32")(h)
+
+    return keras.Model(inputs=inputs, outputs=logits)
+
+    
+if __name__ == "__main__":
+    import config_vit_base_96 as conf
+    
+    classifier_model = vit_classifier(
+        orig_image_shape=(32, 32, 3),
+        image_shape=conf.IMAGE_SHAPE,
+        patch_size=conf.PATCH_SIZE,
+        num_layers=conf.NUM_LAYERS,
+        num_heads=conf.NUM_HEADS,
+        mlp_dim=conf.MLP_DIM,
+        attention_dropout_rate=conf.ATTENTION_DROPOUT_RATE,
+        dropout_rate=conf.DROPOUT_RATE,
+        num_classes=conf.NUM_CLASSES
+    )
+    
+    print(classifier_model.summary())
+

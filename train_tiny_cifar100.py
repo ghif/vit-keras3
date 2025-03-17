@@ -43,52 +43,52 @@ print(vit_model.summary())
 for i, layer in enumerate(vit_model.layers):
     print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
-# Train the model
-optimizer = keras.optimizers.Adam(
-    learning_rate=conf.vit_config["training"]["learning_rate"],
-    weight_decay=conf.vit_config["training"]["weight_decay"],
-    global_clipnorm=1.0
-)
+# # Train the model
+# optimizer = keras.optimizers.Adam(
+#     learning_rate=conf.vit_config["training"]["learning_rate"],
+#     weight_decay=conf.vit_config["training"]["weight_decay"],
+#     global_clipnorm=1.0
+# )
 
-vit_model.compile(
-    optimizer=optimizer,
-    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    metrics=[
-        keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-        keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
-    ],
-)
+# vit_model.compile(
+#     optimizer=optimizer,
+#     loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#     metrics=[
+#         keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+#         keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+#     ],
+# )
 
-# Checkpoint callback
-checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
+# # Checkpoint callback
+# checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
 
-checkpoint_callback = keras.callbacks.ModelCheckpoint(
-    checkpoint_filepath,
-    monitor="val_accuracy",
-    save_best_only=True,
-    save_weights_only=True,
-)
+# checkpoint_callback = keras.callbacks.ModelCheckpoint(
+#     checkpoint_filepath,
+#     monitor="val_accuracy",
+#     save_best_only=True,
+#     save_weights_only=True,
+# )
 
 
-history = vit_model.fit(
-    train_dataset,
-    batch_size=conf.vit_config["training"]["batch_size"],
-    epochs=conf.vit_config["training"]["num_epochs"],
-    validation_data=test_dataset,
-    callbacks=[checkpoint_callback],
-)
-loss, accuracy, top_5_accuracy = vit_model.evaluate(train_dataset, batch_size=conf.vit_config["training"]["batch_size"])
-print(f"Train loss: {loss}")
-print(f"Train accuracy: {round(accuracy * 100, 2)}%")
-print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
+# history = vit_model.fit(
+#     train_dataset,
+#     batch_size=conf.vit_config["training"]["batch_size"],
+#     epochs=conf.vit_config["training"]["num_epochs"],
+#     validation_data=test_dataset,
+#     callbacks=[checkpoint_callback],
+# )
+# loss, accuracy, top_5_accuracy = vit_model.evaluate(train_dataset, batch_size=conf.vit_config["training"]["batch_size"])
+# print(f"Train loss: {loss}")
+# print(f"Train accuracy: {round(accuracy * 100, 2)}%")
+# print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
-loss, accuracy, top_5_accuracy = vit_model.evaluate(test_dataset, batch_size=conf.vit_config["training"]["batch_size"])
-print(f"Test loss: {loss}")
-print(f"Test accuracy: {round(accuracy * 100, 2)}%")
-print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
+# loss, accuracy, top_5_accuracy = vit_model.evaluate(test_dataset, batch_size=conf.vit_config["training"]["batch_size"])
+# print(f"Test loss: {loss}")
+# print(f"Test accuracy: {round(accuracy * 100, 2)}%")
+# print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
-# Store history
-history_dict = history.history
+# # Store history
+# history_dict = history.history
 
-with open(f"models/{MODEL_PREFIX}_cifar100_history.json", "w") as f:
-    json.dump(history_dict, f)
+# with open(f"models/{MODEL_PREFIX}_cifar100_history.json", "w") as f:
+#     json.dump(history_dict, f)

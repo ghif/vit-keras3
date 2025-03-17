@@ -11,10 +11,11 @@ import numpy as np
 import models as M
 import tools
 
-import config_base as conf
+# import config_base as conf
+import config_vit_base_96 as conf
 
 # Constants
-MODEL_PREFIX = "vit_base_v2"
+MODEL_PREFIX = "vit_base_96"
 
 # Prepare the data
 num_classes = 100
@@ -34,8 +35,6 @@ resized_image = ops.image.resize(
 patches = M.Patches(patch_size=conf.vit_config["image"]["patch_size"])(resized_image)
 print(f"Patches per image: {patches.shape[1]}")
 print(f"Elements per patch: {patches.shape[-1]}")
-
-# tools.display_patches(patches, conf.vit_config["image"]["patch_size"], 3)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
