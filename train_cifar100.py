@@ -45,7 +45,7 @@ vit_model = M.vit_classifier(
 )
 
 # vit_model.layers[1].adapt(x_train)
-print(vit_model.summary())
+print(vit_model.summary(expand_nested=True))
 
 for i, layer in enumerate(vit_model.layers):
     print(f"[{i}] {layer.name} - {layer.dtype_policy}")
