@@ -29,8 +29,8 @@ input_shape = (32, 32, 3)
 train_dataset, _ = get_dataset(conf.BATCH_SIZE, is_training=True)
 test_dataset, _ = get_dataset(conf.BATCH_SIZE, is_training=False)
 
-# Use mixed precision
-keras.mixed_precision.set_global_policy("mixed_float16")
+# # Use mixed precision
+# keras.mixed_precision.set_global_policy("mixed_float16")
 
 vit_model = M.vit_classifier(
     orig_image_shape=input_shape,
