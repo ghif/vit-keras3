@@ -63,6 +63,8 @@ orig_image_shape = dataset_info.features["image"].shape
 num_classes = dataset_info.features["label"].num_classes
 
 backbone = keras_hub.models.Backbone.from_preset(BASE_MODEL)
+backbone.trainable = False
+
 preprocessor = keras_hub.models.ViTImageClassifierPreprocessor.from_preset(
     BASE_MODEL
 )
