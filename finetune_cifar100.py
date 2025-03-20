@@ -4,7 +4,6 @@ os.environ["KERAS_BACKEND"] = "tensorflow"
 import json
 
 import keras_hub
-import tensorflow_datasets as tfds
 import keras
 import tensorflow as tf
 
@@ -14,7 +13,7 @@ import dataset
 
 # Contants
 AUTOTUNE = tf.data.AUTOTUNE
-MODEL_PREFIX = "vit_base_224_finetuned_all"
+MODEL_PREFIX = "vit_base_224_finetuned_v2"
 BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 def get_cosine_decay_schedule(
@@ -75,7 +74,7 @@ lr_schedule = get_cosine_decay_schedule(
 )
 # Finetune the classifier with SGD optimizer
 optimizer = keras.optimizers.SGD(
-    learning_rate=conf.LEARNING_RATE, 
+    learning_rate=lr_schedule, 
     momentum=0.9,
     global_clipnorm=1.0
 
