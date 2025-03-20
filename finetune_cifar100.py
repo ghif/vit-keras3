@@ -13,7 +13,7 @@ import dataset
 
 # Contants
 AUTOTUNE = tf.data.AUTOTUNE
-MODEL_PREFIX = "vit_base_224_finetuned_v2"
+MODEL_PREFIX = "vit_base_224_finetuned_all"
 BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 def get_cosine_decay_schedule(
@@ -44,7 +44,7 @@ num_classes = dataset_info.features["label"].num_classes
 keras.mixed_precision.set_global_policy("mixed_float16")
 
 backbone = keras_hub.models.Backbone.from_preset(BASE_MODEL)
-backbone.trainable = False
+# backbone.trainable = False
 
 preprocessor = keras_hub.models.ViTImageClassifierPreprocessor.from_preset(
     BASE_MODEL
@@ -77,7 +77,6 @@ optimizer = keras.optimizers.SGD(
     learning_rate=lr_schedule, 
     momentum=0.9,
     global_clipnorm=1.0
-
 )
 
 image_classifier.compile(
