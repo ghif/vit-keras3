@@ -12,6 +12,7 @@ import json
 # Contants
 AUTOTUNE = tf.data.AUTOTUNE
 MODEL_PREFIX = "vit_base_224_finetuned"
+BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 def prepare_dataset(batch_size, target_image_shape):
     data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
@@ -61,11 +62,22 @@ train_dataset, test_dataset, dataset_info = prepare_dataset(conf.BATCH_SIZE, con
 orig_image_shape = dataset_info.features["image"].shape
 num_classes = dataset_info.features["label"].num_classes
 
-image_classifier = keras_hub.models.ImageClassifier.from_preset(
-    "vit_base_patch16_224_imagenet",
-    num_classes=num_classes
+backbone = keras_hub.models.Backbone.from_preset(BASE_MODEL)
+preprocessor = keras_hub.models.ViTImageClassifierPreprocessor.from_preset(
+    BASE_MODEL
 )
-image_classifier.summary(expand_nested=True)
+
+image_classifier = keras_hub.models.ViTImageClassifier(
+    backbone=backbone,
+    num_classes=num_classes,
+    preprocessor=preprocessor,
+)
+print(image_classifier.summary(expand_nested=True))
+# image_classifier = keras_hub.models.ImageClassifier.from_preset(
+#     "vit_base_patch16_224_imagenet",
+#     num_classes=num_classes
+# )
+# image_classifier.summary(expand_nested=True)
 
 steps_per_epoch = dataset_info.splits["train"].num_examples // conf.BATCH_SIZE
 print(f"Steps per epoch: {steps_per_epoch}")
