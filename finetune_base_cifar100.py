@@ -4,8 +4,6 @@ os.environ["KERAS_BACKEND"] = "tensorflow"
 import keras_hub
 import tensorflow_datasets as tfds
 import keras
-from keras import ops
-from keras.applications.imagenet_utils import decode_predictions
 import tensorflow as tf
 
 import config_vit_base_224_finetune as conf
@@ -17,7 +15,6 @@ MODEL_PREFIX = "vit_base_224_finetuned"
 
 def prepare_dataset(batch_size, target_image_shape):
     data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
-    # train_steps_per_epoch = dataset_info.splits["train"].num_examples // conf.BATCH_SIZE
     train_dataset = data["train"]
     test_dataset = data["test"]
     
@@ -69,9 +66,6 @@ image_classifier = keras_hub.models.ImageClassifier.from_preset(
     num_classes=num_classes
 )
 image_classifier.summary(expand_nested=True)
-# image_classifier.backbone.summary(expand_nested=True)
-# image_classifier.backbone.summary(expand_nested=True)
-# keras.utils.plot_model(image_classifier.backbone, "vit_base_patch16_224_imagenet.png", show_shapes=True)
 
 steps_per_epoch = dataset_info.splits["train"].num_examples // conf.BATCH_SIZE
 print(f"Steps per epoch: {steps_per_epoch}")
