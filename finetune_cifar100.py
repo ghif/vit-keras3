@@ -68,7 +68,7 @@ class WarmUpCosineDecay(schedules.LearningRateSchedule):
 
 # Contants
 AUTOTUNE = tf.data.AUTOTUNE
-MODEL_PREFIX = "vit_base_224_finetuned_all"
+MODEL_PREFIX = "vit_base_224_finetuned_v3"
 BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 # Prepare the data
@@ -85,7 +85,7 @@ num_classes = dataset_info.features["label"].num_classes
 keras.mixed_precision.set_global_policy("mixed_float16")
 
 backbone = keras_hub.models.Backbone.from_preset(BASE_MODEL)
-# backbone.trainable = False
+backbone.trainable = False
 
 preprocessor = keras_hub.models.ViTImageClassifierPreprocessor.from_preset(
     BASE_MODEL
