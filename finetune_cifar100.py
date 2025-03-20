@@ -5,30 +5,71 @@ import json
 
 import keras_hub
 import keras
+from keras import ops
+from keras.optimizers import schedules
+import math
 import tensorflow as tf
 
 import config_vit_base_224_finetune_all as conf
 import dataset
 
+def lr_warmup_cosine_decay(
+    global_step,
+    warmup_steps,
+    hold=0,
+    total_steps=0,
+    target_lr=1e-3,
+):
+    # Cosine decay
+    learning_rate = (
+        0.5
+        * target_lr
+        * (
+            1
+            + ops.cos(
+                math.pi
+                * ops.convert_to_tensor(
+                    global_step - warmup_steps - hold, dtype="float32"
+                )
+                / ops.convert_to_tensor(
+                    total_steps - warmup_steps - hold, dtype="float32"
+                )
+            )
+        )
+    )
+
+    warmup_lr = target_lr * (global_step / warmup_steps)
+
+    if hold > 0:
+        learning_rate = ops.where(
+            global_step > warmup_steps + hold, learning_rate, target_lr
+        )
+
+    learning_rate = ops.where(global_step < warmup_steps, warmup_lr, learning_rate)
+    return learning_rate
+
+class WarmUpCosineDecay(schedules.LearningRateSchedule):
+    def __init__(self, warmup_steps, total_steps, hold, target_lr=1e-2):
+        super().__init__()
+        self.target_lr = target_lr
+        self.warmup_steps = warmup_steps
+        self.total_steps = total_steps
+        self.hold = hold
+
+    def __call__(self, step):
+        lr = lr_warmup_cosine_decay(
+            global_step=step,
+            total_steps=self.total_steps,
+            warmup_steps=self.warmup_steps,
+            target_lr=self.target_lr,
+            hold=self.hold,
+        )
+        return ops.where(step > self.total_steps, 0.0, lr)
 
 # Contants
 AUTOTUNE = tf.data.AUTOTUNE
 MODEL_PREFIX = "vit_base_224_finetuned_all"
 BASE_MODEL = "vit_base_patch16_224_imagenet"
-
-def get_cosine_decay_schedule(
-    start_lr, num_epochs, steps_per_epoch
-):
-    # calculate total steps
-    total_steps = num_epochs * steps_per_epoch
-    
-    # Decay learning rate
-    lr_schedule = keras.optimizers.schedules.CosineDecay(
-        initial_learning_rate=start_lr,
-        decay_steps=total_steps,
-    )
-    return lr_schedule
-
 
 # Prepare the data
 train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(conf.BATCH_SIZE, conf.IMAGE_SHAPE)
@@ -67,10 +108,16 @@ for i, layer in enumerate(image_classifier.layers):
 
 steps_per_epoch = dataset_info.splits["train"].num_examples // conf.BATCH_SIZE
 print(f"Steps per epoch: {steps_per_epoch}")
-lr_schedule = get_cosine_decay_schedule(
-    start_lr=conf.LEARNING_RATE,
-    num_epochs=conf.EPOCHS,
-    steps_per_epoch=steps_per_epoch
+
+# calculate total steps
+total_steps = conf.EPOCHS * steps_per_epoch
+print(f"Total steps: {total_steps}")
+
+lr_schedule = WarmUpCosineDecay(
+    target_lr=conf.LEARNING_RATE,
+    warmup_steps=int(0.1 * total_steps),
+    total_steps=total_steps,
+    hold=int(0.45 * total_steps)
 )
 # Finetune the classifier with SGD optimizer
 optimizer = keras.optimizers.SGD(
@@ -119,3 +166,20 @@ history_dict = history.history
 
 with open(f"models/{MODEL_PREFIX}_cifar100_history.json", "w") as f:
     json.dump(history_dict, f)
+
+
+# global_step = ops.arange(0, total_steps, dtype="int32")
+
+# learning_rate = lr_schedule(global_step)
+# print(learning_rate)
+
+# # Plot learning rate
+# import matplotlib.pyplot as plt
+
+# plt.figure(figsize=(12, 6))
+# plt.plot(learning_rate)
+# plt.xlabel('Step')
+# plt.ylabel('Learning Rate') 
+# plt.title('Cosine Decay Learning Rate Schedule')
+# # plt.show()
+# plt.savefig("img/vit_base_224_finetuned_all_lr_schedule.png")
