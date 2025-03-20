@@ -1,43 +1,21 @@
 import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
+import json
+
 import keras_hub
 import tensorflow_datasets as tfds
 import keras
 import tensorflow as tf
 
 import config_vit_base_224_finetune as conf
-import json
+import dataset
+
 
 # Contants
 AUTOTUNE = tf.data.AUTOTUNE
 MODEL_PREFIX = "vit_base_224_finetuned_all"
 BASE_MODEL = "vit_base_patch16_224_imagenet"
-
-def prepare_dataset(batch_size, target_image_shape):
-    data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
-    train_dataset = data["train"]
-    test_dataset = data["test"]
-    
-    resizing = keras.layers.Resizing(
-      target_image_shape[0], target_image_shape[1], crop_to_aspect_ratio=True
-    )
-
-    def preprocess_inputs(image, label):
-      image = tf.cast(image, tf.float32)
-      return resizing(image), label
-    
-    train_dataset = train_dataset.shuffle(
-      10 * conf.BATCH_SIZE, reshuffle_each_iteration=True
-    ).map(preprocess_inputs, num_parallel_calls=AUTOTUNE)
-
-    train_dataset = train_dataset.batch(batch_size)
-
-    test_dataset = test_dataset.map(preprocess_inputs, num_parallel_calls=AUTOTUNE)
-    test_dataset = test_dataset.batch(batch_size)
-
-    return train_dataset, test_dataset, dataset_info
-
 
 def get_cosine_decay_schedule(
     start_lr, num_epochs, steps_per_epoch
@@ -52,8 +30,9 @@ def get_cosine_decay_schedule(
     )
     return lr_schedule
 
+
 # Prepare the data
-train_dataset, test_dataset, dataset_info = prepare_dataset(conf.BATCH_SIZE, conf.IMAGE_SHAPE)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(conf.BATCH_SIZE, conf.IMAGE_SHAPE)
 
 # # Check training images
 # images = next(iter(train_dataset.take(1)))[0]
@@ -66,7 +45,7 @@ num_classes = dataset_info.features["label"].num_classes
 keras.mixed_precision.set_global_policy("mixed_float16")
 
 backbone = keras_hub.models.Backbone.from_preset(BASE_MODEL)
-# backbone.trainable = False
+backbone.trainable = False
 
 preprocessor = keras_hub.models.ViTImageClassifierPreprocessor.from_preset(
     BASE_MODEL

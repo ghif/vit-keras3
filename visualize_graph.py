@@ -2,7 +2,8 @@ import json
 import matplotlib.pyplot as plt
 
 # Open json history files
-with open("models/vit_base_96_cifar100_history.json", "r") as f:
+hist_file = "vit_base_224_finetuned_cifar100_history.json"
+with open(f"models/{hist_file}", "r") as f:
     history_dict = json.load(f)
 
 # Plot the training history
@@ -29,5 +30,5 @@ plt.legend()
 
 plt.tight_layout()
 # plt.show()
-plt.savefig("img/vit_base_96_cifar100_plot.png")
+plt.savefig("img/vit_base_224_finetuned_cifar100_plot.png")
 
