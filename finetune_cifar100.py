@@ -62,6 +62,9 @@ train_dataset, test_dataset, dataset_info = prepare_dataset(conf.BATCH_SIZE, con
 orig_image_shape = dataset_info.features["image"].shape
 num_classes = dataset_info.features["label"].num_classes
 
+# Use mixed precision
+keras.mixed_precision.set_global_policy("mixed_float16")
+
 backbone = keras_hub.models.Backbone.from_preset(BASE_MODEL)
 backbone.trainable = False
 
@@ -74,7 +77,16 @@ image_classifier = keras_hub.models.ViTImageClassifier(
     num_classes=num_classes,
     preprocessor=preprocessor,
 )
+
+# Set DType Policy float32 for last layer
+last_layer = image_classifier.layers[-1]
+last_layer.dtype_policy = keras.mixed_precision.Policy("float32")
 print(image_classifier.summary(expand_nested=True))
+
+# Check layer dtype policies
+for i, layer in enumerate(image_classifier.layers):
+    print(f"[{i}] {layer.name} - {layer.dtype_policy}")
+
 # image_classifier = keras_hub.models.ImageClassifier.from_preset(
 #     "vit_base_patch16_224_imagenet",
 #     num_classes=num_classes
