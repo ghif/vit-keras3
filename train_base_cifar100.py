@@ -12,7 +12,7 @@ import models as M
 import tools
 
 # import config_base as conf
-import config_vit_base_96 as conf
+import config_vit_base_96_train as conf
 
 # Constants
 MODEL_PREFIX = "vit_base_96"

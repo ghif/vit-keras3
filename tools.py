@@ -20,3 +20,25 @@ def display_patches(patches, patch_size, dimensions):
         plt.axis("off")
 
     plt.show()
+
+def plot_image_gallery(images, titles=None, num_cols=3, figsize=(6, 12)):
+    num_images = len(images)
+    images = np.asarray(images) / 255.0
+    images = np.minimum(np.maximum(images, 0.0), 1.0)
+    num_rows = (num_images + num_cols - 1) // num_cols
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=figsize, squeeze=False)
+    axes = axes.flatten()  # Flatten in case the axes is a 2D array
+
+    for i, ax in enumerate(axes):
+        if i < num_images:
+            # Plot the image
+            ax.imshow(images[i])
+            ax.axis("off")  # Remove axis
+            if titles and len(titles) > i:
+                ax.set_title(titles[i], fontsize=12)
+        else:
+            # Turn off the axis for any empty subplot
+            ax.axis("off")
+
+    plt.show()
+    plt.close()

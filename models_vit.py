@@ -1,94 +1,53 @@
 import keras
 from keras import layers
 from keras import ops
-
-class Patches(layers.Layer):
-    """Class to convert images into patches.
-    This layer converts input images into a sequence of patches. The patches are created
-    by dividing the image into equal-sized squares of size `patch_size x patch_size`.
-    Args:
-        patch_size (int): The size of each square patch (both width and height).
-    Input shape:
-        4D tensor with shape: (batch_size, height, width, channels)
-    Output shape:
-        3D tensor with shape: (batch_size, N, patch_size*patch_size*channels)
-        where N = (height//patch_size) * (width//patch_size)
-    Example:
-        ```python
-        patches = Patches(patch_size=16)
-        x = tf.random.normal((2, 224, 224, 3))  # 2 images of 224x224x3
-        patches_sequence = patches(x)  # Shape: (2, 196, 768)
-        ```
+    
+def extract_patches(images, patch_size):
     """
-    def __init__(self, patch_size):
-        super(Patches, self).__init__()
-        self.patch_size = patch_size
+    Extract patches from a batch of images.
 
-    def call(self, images):
-        input_shape = ops.shape(images)
-        batch_size = input_shape[0]
-        height = input_shape[1]
-        width = input_shape[2]
-        channels = input_shape[3]
-        num_patches_h = height // self.patch_size
-        num_patches_w = width // self.patch_size
-        patches = keras.ops.image.extract_patches(
-            images,
-            size=self.patch_size
-        )
-        patches = ops.reshape(
-            patches,
-            (
-                batch_size,
-                num_patches_h * num_patches_w,
-                self.patch_size * self.patch_size * channels,
-            ),
-        )
-        return patches
-    
-    def get_config(self):
-        config = super().get_config()
-        config.update({"patch_size": self.patch_size})
-        return config
-    
-class PatchEncoder(layers.Layer):
-    """A layer that combines linear projection and position embedding for image patches.
-    This layer is part of Vision Transformer architecture that:
-    1. Projects the flattened patches into a lower dimensional space
-    2. Adds positional embeddings to retain spatial information
     Args:
-        num_patches (int): Number of patches the image is divided into
-        projection_dim (int): Dimension of the projection space
-    Attributes:
-        projection (layers.Dense): Linear projection layer
-        position_embedding (layers.Embedding): Learnable position embeddings
-    Call arguments:
-        patch: A tensor of shape `(batch_size, num_patches, patch_dim)`
-            where patch_dim is the flattened dimension of each image patch
+        images (Tensor): A batch of images with shape (batch_size, height, width, channels).
+        patch_size (int): The size of the patches to be extracted.
     Returns:
-        A tensor of shape `(batch_size, num_patches, projection_dim)`
-        containing the projected patches with position embeddings added
+        Tensor: The extracted patches.
     """
-    def __init__(self, num_patches, projection_dim):
-        super().__init__()
-        self.num_patches = num_patches
-        self.projection = layers.Dense(units=projection_dim)
-        self.position_embedding = layers.Embedding(
-            input_dim=num_patches, output_dim=projection_dim
+    (batch_size, height, width, channels) = ops.shape(images)
+    num_patches_h = height // patch_size
+    num_patches_w = width // patch_size
+    patches = keras.ops.image.extract_patches(
+        images,
+        size=patch_size
+    )
+    patches = ops.reshape(
+        patches,
+        (
+            batch_size,
+            num_patches_h * num_patches_w,
+            patch_size * patch_size * channels
         )
-    
-    def call(self, patch):
-        positions = ops.expand_dims(
-            ops.arange(start=0, stop=self.num_patches, step=1), axis=0
-        )
-        projected_patches = self.projection(patch)
-        encoded = projected_patches + self.position_embedding(positions)
-        return encoded
-    
-    def get_config(self):
-        config = super().get_config()
-        config.update({"num_patches": self.num_patches})
-        return config
+    )
+    return patches
+
+def encode_patches(patch, num_patches, projection_dim):
+    """
+    Encode a single image patch.
+
+    Args:
+        patch (Tensor): A single image patch with shape (patch_dim).
+        num_patches (int): Number of patches the image is divided into.
+        projection_dim (int): Dimension of the projection space.
+    Returns:
+        Tensor: The encoded patch.
+    """
+    positions = ops.expand_dims(
+        ops.arange(start=0, stop=num_patches, step=1), axis=0
+    )
+    projection = layers.Dense(units=projection_dim)(patch)
+    position_embedding = layers.Embedding(
+        input_dim=num_patches, output_dim=projection_dim
+    )(positions)
+    return projection + position_embedding
 
 def mlp_block(x, mlp_dim, dropout_rate):
     """
@@ -153,15 +112,15 @@ def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_ra
     x = layers.Dropout(dropout_rate)(x)
 
     # Skip connection 1
-    x = layers.Add()([x, inputs])
+    x = x + inputs
 
     # MLP block
     y = layers.LayerNormalization(epsilon=1e-6)(x)
     y = mlp_block(y, mlp_dim, dropout_rate)
-    y = layers.Add()([y, x])
-
-
+    
     # Skip connection 2
+    y = y + x
+    
     return y
 
 def vit_encoder(inputs, num_layers, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate):
@@ -206,8 +165,8 @@ def vit_backbone(orig_image_shape, image_shape, patch_size, num_layers, num_head
 
     inputs = keras.Input(shape=orig_image_shape)
     augmented = augment_and_resize(inputs, image_shape[0])
-    patches = Patches(patch_size)(augmented)
-    encoded_patches = PatchEncoder(num_patches, hidden_dim)(patches)
+    patches = extract_patches(augmented, patch_size)
+    encoded_patches = encode_patches(patches, num_patches, hidden_dim)
 
     y = vit_encoder(
         encoded_patches, num_layers, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate
@@ -254,13 +213,13 @@ def vit_classifier(orig_image_shape, image_shape, patch_size, num_layers, num_he
 
     
 if __name__ == "__main__":
-    import config_vit_base_96 as conf
+    import config_vit_base_96_train as conf
     
     classifier_model = vit_classifier(
         orig_image_shape=(32, 32, 3),
         image_shape=conf.IMAGE_SHAPE,
         patch_size=conf.PATCH_SIZE,
-        num_layers=1,
+        num_layers=conf.NUM_LAYERS,
         num_heads=conf.NUM_HEADS,
         mlp_dim=conf.MLP_DIM,
         attention_dropout_rate=conf.ATTENTION_DROPOUT_RATE,
