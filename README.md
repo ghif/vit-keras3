@@ -46,28 +46,23 @@ The Vision Transformer implemented in this repository consists of:
 5. MLP Head: Final classification layers
 
 ## Configuration
-The model is configurable through the dictionary in `config.py`:
+The model is configurable through the dictionary in `config_*.py`:
 ```
-vit_config = {
-    "training": {
-        "learning_rate": 0.001,
-        "weight_decay": 0.0001,
-        "batch_size": 256,
-        "num_epochs": 10,
-    },
-    "image": {
-        "image_size": 72,
-        "patch_size": 6,
-        "num_patches": (72 // 6) ** 2,
-    },
-    "model": {
-        "projection_dim": 64,
-        "num_heads": 4,
-        "transformer_units": [128, 64],
-        "transformer_layers": 8,
-        "mlp_head_units": [2048, 1024],
-    }
-}
+# Model architecture
+IMAGE_SHAPE = (96, 96, 3)
+PATCH_SIZE = 16
+NUM_LAYERS = 12
+NUM_HEADS = 12
+MLP_DIM = 3072
+ATTENTION_DROPOUT_RATE = 0.1
+DROPOUT_RATE = 0.1
+NUM_CLASSES = 100
+
+# Training
+LEARNING_RATE = 0.0001
+WEIGHT_DECAY = 0.03
+BATCH_SIZE = 128
+EPOCHS = 200
 ```
 
 ## License
