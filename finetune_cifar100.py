@@ -7,7 +7,7 @@ import keras_hub
 import keras
 import tensorflow as tf
 
-import config_vit_base_224_finetune as conf
+import config_vit_base_224_finetune_all as conf
 import dataset
 
 
