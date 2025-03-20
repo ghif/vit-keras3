@@ -10,7 +10,7 @@ from keras.optimizers import schedules
 import math
 import tensorflow as tf
 
-import config_vit_base_224_finetune_all as conf
+import config_vit_base_224_finetune as conf
 import dataset
 
 def lr_warmup_cosine_decay(
