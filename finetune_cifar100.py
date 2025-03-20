@@ -133,12 +133,12 @@ history = image_classifier.fit(
     validation_data=test_dataset,
     callbacks=[checkpoint_callback],
 )
-loss, accuracy, top_5_accuracy = image_classifier.evaluate(train_dataset, batch_size=conf.BATCH_SIZE)
+loss, accuracy, top_5_accuracy = image_classifier.evaluate(train_dataset)
 print(f"Train loss: {loss}")
 print(f"Train accuracy: {round(accuracy * 100, 2)}%")
 print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
-loss, accuracy, top_5_accuracy = image_classifier.evaluate(test_dataset, batch_size=conf.BATCH_SIZE)
+loss, accuracy, top_5_accuracy = image_classifier.evaluate(test_dataset)
 print(f"Test loss: {loss}")
 print(f"Test accuracy: {round(accuracy * 100, 2)}%")
 print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
