@@ -12,4 +12,4 @@
     "batch_size": 128,
     "epochs": 200,
     "global_clipnorm": 1.0
-  }
+}
