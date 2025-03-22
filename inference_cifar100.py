@@ -5,7 +5,24 @@ import keras
 import keras_hub
 
 import dataset
-import config_vit_base_224_finetune as conf
+
+import json
+import argparse
+
+# Add argument parser
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", type=str, default="config_vit_base_224_finetune.json")
+args = parser.parse_args()
+
+# Load config json
+with open(args.config) as f:
+    conf = json.load(f)
+
+IMAGE_SHAPE = tuple(conf["image_shape"])
+LEARNING_RATE = conf["learning_rate"]
+WEIGHT_DECAY = conf["weight_decay"]
+BATCH_SIZE = conf["batch_size"]
+EPOCHS = conf["epochs"]
 
 def get_cosine_decay_schedule(
     start_lr, num_epochs, steps_per_epoch
@@ -26,7 +43,7 @@ BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 # Prepare data
 train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(
-    batch_size=conf.BATCH_SIZE, target_image_shape=conf.IMAGE_SHAPE
+    batch_size=BATCH_SIZE, target_image_shape=IMAGE_SHAPE
 )
 
 
@@ -50,11 +67,11 @@ image_classifier = keras_hub.models.ViTImageClassifier(
 last_layer = image_classifier.layers[-1]
 last_layer.dtype_policy = keras.mixed_precision.Policy("float32")
 
-steps_per_epoch = dataset_info.splits["train"].num_examples // conf.BATCH_SIZE
+steps_per_epoch = dataset_info.splits["train"].num_examples // BATCH_SIZE
 print(f"Steps per epoch: {steps_per_epoch}")
 lr_schedule = get_cosine_decay_schedule(
-    start_lr=conf.LEARNING_RATE,
-    num_epochs=conf.EPOCHS,
+    start_lr=LEARNING_RATE,
+    num_epochs=EPOCHS,
     steps_per_epoch=steps_per_epoch
 )
 # Finetune the classifier with SGD optimizer

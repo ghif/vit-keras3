@@ -217,14 +217,14 @@ if __name__ == "__main__":
     
     classifier_model = vit_classifier(
         orig_image_shape=(32, 32, 3),
-        image_shape=conf.IMAGE_SHAPE,
-        patch_size=conf.PATCH_SIZE,
-        num_layers=conf.NUM_LAYERS,
-        num_heads=conf.NUM_HEADS,
-        mlp_dim=conf.MLP_DIM,
-        attention_dropout_rate=conf.ATTENTION_DROPOUT_RATE,
-        dropout_rate=conf.DROPOUT_RATE,
-        num_classes=conf.NUM_CLASSES
+        image_shape=IMAGE_SHAPE,
+        patch_size=PATCH_SIZE,
+        num_layers=NUM_LAYERS,
+        num_heads=NUM_HEADS,
+        mlp_dim=MLP_DIM,
+        attention_dropout_rate=ATTENTION_DROPOUT_RATE,
+        dropout_rate=DROPOUT_RATE,
+        num_classes=NUM_CLASSES
     )
     
     print(classifier_model.summary())

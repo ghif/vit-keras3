@@ -2,46 +2,59 @@ import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import json
+import argparse
 import keras
+
 import models_vit as M
-import config_tiny as conf
-import tensorflow_datasets as tfds
+import dataset
 
-import config_vit_base_96_train as conf
+# Add argument parser
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", type=str, default="config_vit_base_96_train.json")
+args = parser.parse_args()
 
-def get_dataset(batch_size, is_training=True):
-  split = 'train' if is_training else 'test'
-  dataset, info = tfds.load('cifar100', split=split, with_info=True, as_supervised=True, try_gcs=False)
-
-  if is_training:
-    dataset = dataset.shuffle(10000)
-
-  dataset = dataset.batch(batch_size)
-  return dataset, info
+# Load config json
+with open(args.config) as f:
+    conf = json.load(f)
 
 # Constants
 MODEL_PREFIX = "vit_base_96"
+
+IMAGE_SHAPE = tuple(conf["image_shape"])
+PATCH_SIZE = conf["patch_size"]
+NUM_LAYERS = conf["num_layers"]
+NUM_HEADS = conf["num_heads"]
+MLP_DIM = conf["mlp_dim"]
+ATTENTION_DROPOUT_RATE = conf["attention_dropout_rate"]
+DROPOUT_RATE = conf["dropout_rate"]
+NUM_CLASSES = conf["num_classes"]
+LEARNING_RATE = conf["learning_rate"]
+WEIGHT_DECAY = conf["weight_decay"]
+BATCH_SIZE = conf["batch_size"]
+EPOCHS = conf["epochs"]
+GLOBAL_CLIPNORM = conf["global_clipnorm"]
+
 
 # Prepare the data
 num_classes = 100
 input_shape = (32, 32, 3)
 
-train_dataset, _ = get_dataset(conf.BATCH_SIZE, is_training=True)
-test_dataset, _ = get_dataset(conf.BATCH_SIZE, is_training=False)
+train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True)
+test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
 
 vit_model = M.vit_classifier(
     orig_image_shape=input_shape,
-    image_shape=conf.IMAGE_SHAPE,
-    patch_size=conf.PATCH_SIZE,
-    num_layers=conf.NUM_LAYERS,
-    num_heads=conf.NUM_HEADS,
-    mlp_dim=conf.MLP_DIM,
-    attention_dropout_rate=conf.ATTENTION_DROPOUT_RATE,
-    dropout_rate=conf.DROPOUT_RATE,
-    num_classes=conf.NUM_CLASSES
+    image_shape=IMAGE_SHAPE,
+    patch_size=PATCH_SIZE,
+    num_layers=NUM_LAYERS,
+    num_heads=NUM_HEADS,
+    mlp_dim=MLP_DIM,
+    attention_dropout_rate=ATTENTION_DROPOUT_RATE,
+    dropout_rate=DROPOUT_RATE,
+    num_classes=NUM_CLASSES
 )
 
 # vit_model.layers[1].adapt(x_train)
@@ -52,9 +65,9 @@ for i, layer in enumerate(vit_model.layers):
 
 # Train the model
 optimizer = keras.optimizers.Adam(
-    learning_rate=conf.LEARNING_RATE,
-    weight_decay=conf.WEIGHT_DECAY,
-    global_clipnorm=1.0
+    learning_rate=LEARNING_RATE,
+    weight_decay=WEIGHT_DECAY,
+    global_clipnorm=GLOBAL_CLIPNORM,
 )
 
 vit_model.compile(
@@ -76,20 +89,20 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
     save_weights_only=True,
 )
 
-
 history = vit_model.fit(
     train_dataset,
-    batch_size=conf.BATCH_SIZE,
-    epochs=conf.EPOCHS,
+    batch_size=BATCH_SIZE,
+    epochs=EPOCHS,
     validation_data=test_dataset,
     callbacks=[checkpoint_callback],
 )
-loss, accuracy, top_5_accuracy = vit_model.evaluate(train_dataset, batch_size=conf.BATCH_SIZE)
+
+loss, accuracy, top_5_accuracy = vit_model.evaluate(train_dataset, batch_size=BATCH_SIZE)
 print(f"Train loss: {loss}")
 print(f"Train accuracy: {round(accuracy * 100, 2)}%")
 print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
-loss, accuracy, top_5_accuracy = vit_model.evaluate(test_dataset, batch_size=conf.BATCH_SIZE)
+loss, accuracy, top_5_accuracy = vit_model.evaluate(test_dataset, batch_size=BATCH_SIZE)
 print(f"Test loss: {loss}")
 print(f"Test accuracy: {round(accuracy * 100, 2)}%")
 print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")

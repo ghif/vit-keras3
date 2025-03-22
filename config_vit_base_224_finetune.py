@@ -1,8 +1,0 @@
-# Model architecture
-IMAGE_SHAPE = (224, 224, 3)
-
-# Training
-LEARNING_RATE = 1e-3
-WEIGHT_DECAY = 0.0
-BATCH_SIZE = 128
-EPOCHS = 50

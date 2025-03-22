@@ -2,16 +2,32 @@ import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import json
+import math
+import argparse
 
 import keras_hub
 import keras
 from keras import ops
 from keras.optimizers import schedules
-import math
+
 import tensorflow as tf
 
-import config_vit_base_224_finetune as conf
 import dataset
+
+# Add argument parser
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", type=str, default="config_vit_base_224_finetune.json")
+args = parser.parse_args()
+
+# Load config json
+with open(args.config) as f:
+    conf = json.load(f)
+
+IMAGE_SHAPE = tuple(conf["image_shape"])
+LEARNING_RATE = conf["learning_rate"]
+WEIGHT_DECAY = conf["weight_decay"]
+BATCH_SIZE = conf["batch_size"]
+EPOCHS = conf["epochs"]
 
 def lr_warmup_cosine_decay(
     global_step,
@@ -72,7 +88,7 @@ MODEL_PREFIX = "vit_base_224_finetuned_v3"
 BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 # Prepare the data
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(conf.BATCH_SIZE, conf.IMAGE_SHAPE)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE)
 
 # # Check training images
 # images = next(iter(train_dataset.take(1)))[0]
@@ -106,15 +122,15 @@ print(image_classifier.summary(expand_nested=True))
 for i, layer in enumerate(image_classifier.layers):
     print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
-steps_per_epoch = dataset_info.splits["train"].num_examples // conf.BATCH_SIZE
+steps_per_epoch = dataset_info.splits["train"].num_examples // BATCH_SIZE
 print(f"Steps per epoch: {steps_per_epoch}")
 
 # calculate total steps
-total_steps = conf.EPOCHS * steps_per_epoch
+total_steps = EPOCHS * steps_per_epoch
 print(f"Total steps: {total_steps}")
 
 lr_schedule = WarmUpCosineDecay(
-    target_lr=conf.LEARNING_RATE,
+    target_lr=LEARNING_RATE,
     warmup_steps=int(0.1 * total_steps),
     total_steps=total_steps,
     hold=int(0.45 * total_steps)
@@ -147,7 +163,7 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
 # Finetune the classifier
 history = image_classifier.fit(
     train_dataset,
-    epochs=conf.EPOCHS,
+    epochs=EPOCHS,
     validation_data=test_dataset,
     callbacks=[checkpoint_callback],
 )

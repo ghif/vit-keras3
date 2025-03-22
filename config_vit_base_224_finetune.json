@@ -1,0 +1,7 @@
+{
+    "image_shape": [224, 224, 3],
+    "learning_rate": 0.001,
+    "weight_decay": 0.0,
+    "batch_size": 128,
+    "epochs": 50
+}
