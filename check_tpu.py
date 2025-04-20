@@ -10,7 +10,7 @@ print(f"devices: {devices}")
 
 # Define a 2x4 device mesh with data and model parallel axes
 mesh = keras.distribution.DeviceMesh(
-    shape=(2, 4), axis_names=["data", "model"], devices=devices
+    shape=(2, 2), axis_names=["data", "model"], devices=devices
 )
 
 # A 2D layout, which describes how a tensor is distributed across the mesh
