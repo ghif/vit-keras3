@@ -18,7 +18,7 @@ with open(args.config) as f:
     conf = json.load(f)
 
 # Constants
-MODEL_PREFIX = "vit_base_96"
+MODEL_PREFIX = "vit_base_96_noaug"
 
 IMAGE_SHAPE = tuple(conf["image_shape"])
 PATCH_SIZE = conf["patch_size"]
