@@ -1,8 +1,7 @@
 import tensorflow as tf
 
 # Provide the TPU name explicitly
-tpu_name = "tpu-v4-base-us"
-resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu=tpu_name)
+resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu="local")
 
 # You can then proceed with initialization
 tf.config.experimental_connect_to_cluster(resolver)
