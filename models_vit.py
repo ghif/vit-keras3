@@ -76,6 +76,20 @@ def augment_and_resize(images, image_size):
     z = layers.RandomZoom(height_factor=0.2, width_factor=0.2)(z)
     return z
 
+def normalize_and_resize(images, image_size):
+    """
+    Normalize and resize the input images.
+
+    Args:
+        images (Tensor): A batch of images with shape (batch_size, height, width, channels).
+        image_size (int): The size of the output images.
+    Returns:
+        Tensor: The normalized and resized batch of images.
+    """
+    z = layers.Resizing(image_size, image_size)(images)
+    z = layers.Normalization()(z)
+    return z
+
 def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate):
     """
     Create an Encoder 1D block.
@@ -157,10 +171,9 @@ def vit_backbone(orig_image_shape, image_shape, patch_size, num_layers, num_head
     hidden_dim = patch_size * patch_size * 3
 
     inputs = keras.Input(shape=orig_image_shape)
-    augmented = augment_and_resize(inputs, image_shape[0])
-    print(f"[vit_backbone] augmented shape: {augmented.shape}")
+    # augmented = augment_and_resize(inputs, image_shape[0])
+    augmented = normalize_and_resize(inputs, image_shape[0])
     patches = extract_patches(augmented, patch_size)
-    print(f"[vit_backbone] patch shape: {patches.shape}")
     encoded_patches = encode_patches(patches, num_patches, hidden_dim)
 
     y = vit_encoder(
