@@ -124,7 +124,7 @@ def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_ra
 
     # MLP block
     # y = layers.LayerNormalization(epsilon=1e-6)(x)
-    x = layers.LayerNormalization(epsilon=1e-3)(inputs)
+    y = layers.LayerNormalization(epsilon=1e-3)(x)
     y = mlp_block(y, mlp_dim, dropout_rate)
     
     # Skip connection 2
