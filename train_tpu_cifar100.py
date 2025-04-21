@@ -1,8 +1,7 @@
 import os
-os.environ["KERAS_BACKEND"] = "jax"
+os.environ["KERAS_BACKEND"] = "tensorflow"
 
-import jax
-
+import tensorflow as tf
 import json
 import argparse
 import keras
@@ -36,37 +35,53 @@ BATCH_SIZE = conf["batch_size"]
 EPOCHS = conf["epochs"]
 GLOBAL_CLIPNORM = conf["global_clipnorm"]
 
-# Setup data parallelism
-devices = jax.devices("tpu")
-mesh_1d = keras.distribution.DeviceMesh(
-    shape=(len(devices), ), axis_names=["data"], devices=devices
-)
-data_parallel = keras.distribution.DataParallel(device_mesh=mesh_1d)
+# Setup TPU configuration
+try:
+    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu="local")
 
-# Set global distribution
-keras.distribution.set_distribution(data_parallel)
+    tf.config.experimental_connect_to_cluster(resolver)
+    tf.tpu.experimental.initialize_tpu_system(resolver)
+    strategy = tf.distribute.TPUStrategy(resolver)
+    print("Successfully initialized TPU.")
+    print("All devices: ", tf.config.list_logical_devices('TPU'))
+except Exception as e:
+    print(f"Failed to initialize TPU: {e}")
 
 # Prepare the data
 num_classes = 100
 input_shape = (32, 32, 3)
 
-train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True)
+train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True, with_tpu=True)
 test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
 
-vit_model = M.vit_classifier(
-    orig_image_shape=input_shape,
-    image_shape=IMAGE_SHAPE,
-    patch_size=PATCH_SIZE,
-    num_layers=NUM_LAYERS,
-    num_heads=NUM_HEADS,
-    mlp_dim=MLP_DIM,
-    attention_dropout_rate=ATTENTION_DROPOUT_RATE,
-    dropout_rate=DROPOUT_RATE,
-    num_classes=NUM_CLASSES
-)
+with strategy.scope():
+    vit_model = M.vit_classifier(
+        orig_image_shape=input_shape,
+        image_shape=IMAGE_SHAPE,
+        patch_size=PATCH_SIZE,
+        num_layers=NUM_LAYERS,
+        num_heads=NUM_HEADS,
+        mlp_dim=MLP_DIM,
+        attention_dropout_rate=ATTENTION_DROPOUT_RATE,
+        dropout_rate=DROPOUT_RATE,
+        num_classes=NUM_CLASSES
+    )
+    optimizer = keras.optimizers.Adam(
+        learning_rate=LEARNING_RATE,
+        weight_decay=WEIGHT_DECAY,
+        global_clipnorm=GLOBAL_CLIPNORM,
+    )
+    vit_model.compile(
+        optimizer=optimizer,
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+            keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+        ],
+    )
 
 # vit_model.layers[1].adapt(x_train)
 print(vit_model.summary(expand_nested=True))
@@ -75,21 +90,6 @@ for i, layer in enumerate(vit_model.layers):
     print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
 # Train the model
-optimizer = keras.optimizers.Adam(
-    learning_rate=LEARNING_RATE,
-    weight_decay=WEIGHT_DECAY,
-    global_clipnorm=GLOBAL_CLIPNORM,
-)
-
-vit_model.compile(
-    optimizer=optimizer,
-    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    metrics=[
-        keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-        keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
-    ],
-)
-
 # Checkpoint callback
 checkpoint_filepath = f"models/{MODEL_PREFIX}_cifar100.weights.h5"
 

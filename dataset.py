@@ -27,12 +27,15 @@ def prepare_cifar100(batch_size, target_image_shape, autotune=tf.data.AUTOTUNE):
 
     return train_dataset, test_dataset, dataset_info
 
-def get_cifar100(batch_size, is_training=True):
+def get_cifar100(batch_size, is_training=True, with_tpu=False):
     split = 'train' if is_training else 'test'
     dataset, info = tfds.load('cifar100', split=split, with_info=True, as_supervised=True, try_gcs=False)
 
     if is_training:
       dataset = dataset.shuffle(10000)
 
-    dataset = dataset.batch(batch_size)
+    if with_tpu:
+       dataset = dataset.batch(batch_size, drop_remainder=True)
+    else:
+      dataset = dataset.batch(batch_size)
     return dataset, info
