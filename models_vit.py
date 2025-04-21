@@ -12,21 +12,14 @@ def extract_patches(images, patch_size):
     Returns:
         Tensor: The extracted patches.
     """
-    (batch_size, height, width, channels) = ops.shape(images)
+    (_, height, width, channels) = ops.shape(images)
     num_patches_h = height // patch_size
     num_patches_w = width // patch_size
-    patches = keras.ops.image.extract_patches(
+    patches = ops.image.extract_patches(
         images,
         size=patch_size
     )
-    patches = ops.reshape(
-        patches,
-        (
-            batch_size,
-            num_patches_h * num_patches_w,
-            patch_size * patch_size * channels
-        )
-    )
+    patches = keras.layers.Reshape((num_patches_h * num_patches_w, patch_size * patch_size * channels))(patches)
     return patches
 
 def encode_patches(patch, num_patches, projection_dim):
@@ -165,7 +158,9 @@ def vit_backbone(orig_image_shape, image_shape, patch_size, num_layers, num_head
 
     inputs = keras.Input(shape=orig_image_shape)
     augmented = augment_and_resize(inputs, image_shape[0])
+    print(f"[vit_backbone] augmented shape: {augmented.shape}")
     patches = extract_patches(augmented, patch_size)
+    print(f"[vit_backbone] patch shape: {patches.shape}")
     encoded_patches = encode_patches(patches, num_patches, hidden_dim)
 
     y = vit_encoder(
@@ -213,10 +208,32 @@ def vit_classifier(orig_image_shape, image_shape, patch_size, num_layers, num_he
 
     
 if __name__ == "__main__":
-    import config_vit_base_96_train as conf
+    import json
+    import numpy as np
+
+    config_path = "config_vit_base_96_train.json"
+
+    # Load configuration from JSON file
+    with open(config_path) as f:
+        conf = json.load(f)
+    
+    ORIG_IMAGE_SHAPE = (32, 32, 3)
+    IMAGE_SHAPE = tuple(conf["image_shape"])
+    PATCH_SIZE = conf["patch_size"]
+    NUM_LAYERS = conf["num_layers"]
+    NUM_HEADS = conf["num_heads"]
+    MLP_DIM = conf["mlp_dim"]
+    ATTENTION_DROPOUT_RATE = conf["attention_dropout_rate"]
+    DROPOUT_RATE = conf["dropout_rate"]
+    NUM_CLASSES = conf["num_classes"]
+
+    LEARNING_RATE = conf["learning_rate"]
+    WEIGHT_DECAY = conf["weight_decay"]
+    GLOBAL_CLIPNORM = conf["global_clipnorm"]
+    BATCH_SIZE = conf["batch_size"]
     
     classifier_model = vit_classifier(
-        orig_image_shape=(32, 32, 3),
+        orig_image_shape=ORIG_IMAGE_SHAPE,
         image_shape=IMAGE_SHAPE,
         patch_size=PATCH_SIZE,
         num_layers=NUM_LAYERS,
@@ -229,4 +246,22 @@ if __name__ == "__main__":
     
     print(classifier_model.summary())
     keras.utils.plot_model(classifier_model, to_file="vit_base_96_cifar100.png", expand_nested=True, show_shapes=True)
+
+    optimizer = keras.optimizers.Adam(
+    learning_rate=LEARNING_RATE,
+    weight_decay=WEIGHT_DECAY,
+    global_clipnorm=GLOBAL_CLIPNORM,
+)
+
+    classifier_model.compile(
+        optimizer=optimizer,
+        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+            keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+        ],
+    )
+
+    for i, layer in enumerate(classifier_model.layers):
+        print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
