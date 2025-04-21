@@ -7,7 +7,7 @@
     "attention_dropout_rate": 0.1,
     "dropout_rate": 0.1,
     "num_classes": 100,
-    "learning_rate": 0.00001,
+    "learning_rate": 0.0001,
     "weight_decay": 0.03,
     "batch_size": 512,
     "epochs": 200,
