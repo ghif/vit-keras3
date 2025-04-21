@@ -1,0 +1,15 @@
+{
+    "image_shape": [96, 96, 3],
+    "patch_size": 16,
+    "num_layers": 12,
+    "num_heads": 12,
+    "mlp_dim": 3072,
+    "attention_dropout_rate": 0.1,
+    "dropout_rate": 0.1,
+    "num_classes": 100,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.03,
+    "batch_size": 128,
+    "epochs": 200,
+    "global_clipnorm": 1.0
+}

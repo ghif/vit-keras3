@@ -11,7 +11,7 @@ import dataset
 
 # Add argument parser
 parser = argparse.ArgumentParser()
-parser.add_argument("--config", type=str, default="config_vit_base_96_train.json")
+parser.add_argument("--config", type=str, default="config_vit_base_96_tpu_train.json")
 args = parser.parse_args()
 
 # Load config json
