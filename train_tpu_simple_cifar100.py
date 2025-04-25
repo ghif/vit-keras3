@@ -20,7 +20,7 @@ def mlp(input_shape, num_classes):
 # Constants
 BATCH_SIZE = 128
 LEARNING_RATE = 1e-4
-WEIGHT_DECAY = 1e-4
+# WEIGHT_DECAY = 1e-4
 GLOBAL_CLIPNORM = 1.0
 EPOCHS = 100
 MODEL_PREFIX = "mlp_noaug"
@@ -57,7 +57,6 @@ with strategy.scope():
     # Train the model
     optimizer = keras.optimizers.Adam(
         learning_rate=LEARNING_RATE,
-        weight_decay=WEIGHT_DECAY,
         global_clipnorm=GLOBAL_CLIPNORM,
     )
 
