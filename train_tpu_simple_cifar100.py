@@ -18,8 +18,8 @@ def mlp(input_shape, num_classes):
     return keras.Model(inputs=inputs, outputs=logits)
 
 # Constants
-BATCH_SIZE = 128
-LEARNING_RATE = 1e-4
+BATCH_SIZE = 512
+LEARNING_RATE = 1e-3
 # WEIGHT_DECAY = 1e-4
 GLOBAL_CLIPNORM = 1.0
 EPOCHS = 100
