@@ -32,7 +32,6 @@ train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100_simple(BATC
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
 
-
 # Create the model
 model = mlp(input_shape, dataset_info.features["label"].num_classes)
 
@@ -42,11 +41,16 @@ for i, layer in enumerate(model.layers):
     print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
 # Train the model
-optimizer = keras.optimizers.Adam(
+optimizer = keras.optimizers.SGD(
     learning_rate=LEARNING_RATE,
-    weight_decay=WEIGHT_DECAY,
+    momentum=0.9,
     global_clipnorm=GLOBAL_CLIPNORM,
 )
+# optimizer = keras.optimizers.Adam(
+#     learning_rate=LEARNING_RATE,
+#     weight_decay=WEIGHT_DECAY,
+#     global_clipnorm=GLOBAL_CLIPNORM,
+# )
 
 model.compile(
     optimizer=optimizer,

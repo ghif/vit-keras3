@@ -55,10 +55,15 @@ with strategy.scope():
         print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
     # Train the model
-    optimizer = keras.optimizers.Adam(
+    optimizer = keras.optimizers.SGD(
         learning_rate=LEARNING_RATE,
+        momentum=0.9,
         global_clipnorm=GLOBAL_CLIPNORM,
     )
+    # optimizer = keras.optimizers.Adam(
+    #     learning_rate=LEARNING_RATE,
+    #     global_clipnorm=GLOBAL_CLIPNORM,
+    # )
 
     model.compile(
         optimizer=optimizer,
