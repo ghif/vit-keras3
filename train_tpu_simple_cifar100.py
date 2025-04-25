@@ -14,6 +14,9 @@ def mlp(input_shape, num_classes):
     x = keras.layers.Flatten()(inputs)
     x = keras.layers.Dense(512, activation="relu")(x)
     logits = keras.layers.Dense(num_classes, dtype="float32")(x)
+    # tf debugging check numerics for logits
+    logits = tf.debugging.check_numerics(logits, "Logits contain NaN or Inf values")
+
     return keras.Model(inputs=inputs, outputs=logits)
 
 # Constants
