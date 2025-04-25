@@ -7,21 +7,10 @@ import numpy as np
 import keras
 import dataset
 
-
-
 # Define loss function
 loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-
-def evaluate_model(model, tf_dataset):
-    losses = []
-    for batch in tf_dataset:
-        images, labels = batch
-        predictions = model.predict(images, verbose=None)
-        loss_batch = loss_fn(labels, predictions) # sum over batch size
-        losses.append(loss_batch.numpy())
-
-    loss = np.mean(losses)
-    return loss
+accuracy_fn = keras.metrics.SparseCategoricalAccuracy(name="accuracy")
+top_5_accuracy_fn = keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy")
 
 class EvaluationCallback(keras.callbacks.Callback):
     def __init__(self, train_dataset, test_dataset):
@@ -32,10 +21,11 @@ class EvaluationCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         print("Epoch {}:".format(epoch + 1))
 
-        train_loss = evaluate_model(self.model, self.train_dataset)
-        test_loss = evaluate_model(self.model, self.test_dataset)
+        (train_loss, train_acc, train_top_5_acc) = self.model.evaluate(self.train_dataset, verbose=None)
+        (test_loss, test_acc, test_top_5_acc) = self.model.evaluate(self.test_dataset, verbose=None)
 
         print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f})")
+        print(f" > Train and test accuracy: (top-1: {train_acc:.4f}, top-5: {train_top_5_acc:.4f}), (top-1: {test_acc:.4f}, top-5: {test_top_5_acc:.4f})")
         
 
 # Define full-connected networks with functional API
