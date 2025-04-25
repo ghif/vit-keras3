@@ -18,7 +18,7 @@ with open(args.config) as f:
     conf = json.load(f)
 
 # Constants
-MODEL_PREFIX = "vit_base_96_noaug"
+MODEL_PREFIX = "vit_base_96_noaug_v2"
 
 IMAGE_SHAPE = tuple(conf["image_shape"])
 PATCH_SIZE = conf["patch_size"]
@@ -39,8 +39,11 @@ GLOBAL_CLIPNORM = conf["global_clipnorm"]
 num_classes = 100
 input_shape = (32, 32, 3)
 
-train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True)
-test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
+# Prepare the data
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, input_shape)
+
+# train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True)
+# test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
