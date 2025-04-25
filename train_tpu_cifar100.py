@@ -48,11 +48,11 @@ except Exception as e:
     print(f"Failed to initialize TPU: {e}")
 
 # Prepare the data
-num_classes = 100
 input_shape = (32, 32, 3)
 
-train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True, with_tpu=True)
-test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, input_shape)
+# train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True, with_tpu=True)
+# test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
 
 # # Use mixed precision
 # keras.mixed_precision.set_global_policy("mixed_float16")

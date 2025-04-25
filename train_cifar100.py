@@ -36,7 +36,6 @@ GLOBAL_CLIPNORM = conf["global_clipnorm"]
 
 
 # Prepare the data
-num_classes = 100
 input_shape = (32, 32, 3)
 
 # Prepare the data
