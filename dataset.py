@@ -18,10 +18,11 @@ def prepare_cifar100_simple(batch_size, autotune=tf.data.AUTOTUNE):
 
     train_dataset = train_dataset.shuffle(
       10 * batch_size, reshuffle_each_iteration=True
-    ).map(preprocess_inputs, num_parallel_calls=autotune)
+    ).map(preprocess_inputs, num_parallel_calls=autotune).map(check_data_numerics, num_parallel_calls=autotune)
+    
     train_dataset = train_dataset.batch(batch_size)
 
-    test_dataset = test_dataset.map(preprocess_inputs, num_parallel_calls=autotune)
+    test_dataset = test_dataset.map(preprocess_inputs, num_parallel_calls=autotune).map(check_data_numerics, num_parallel_calls=autotune)
     test_dataset = test_dataset.batch(batch_size)
     
     # test_dataset = test_dataset.prefetch(autotune)
