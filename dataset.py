@@ -6,9 +6,9 @@ def check_data_numerics(image, label):
    tf.debugging.check_numerics(image, f"Data check failed for image")
    return image, label
 
-
 def preprocess_inputs(image, label):
-    image = tf.cast(image, tf.float32)
+    # image = tf.cast(image, tf.float32)
+    image = tf.image.convert_image_dtype(image, tf.float32) # Converts to [0, 1]
     return image, label
 
 def prepare_cifar100_simple(batch_size, autotune=tf.data.AUTOTUNE):

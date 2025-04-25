@@ -9,7 +9,7 @@ import dataset
 # Define full-connected networks with functional API
 def mlp(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
-    x = keras.layers.Normalization()(inputs)
+    # x = keras.layers.Normalization()(inputs)
     x = keras.layers.Flatten()(inputs)
     x = keras.layers.Dense(512, activation="relu")(x)
     x = keras.layers.Dense(512, activation="relu")(x)
