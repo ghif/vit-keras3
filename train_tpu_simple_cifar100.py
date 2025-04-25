@@ -10,7 +10,7 @@ import dataset
 # Define full-connected networks with functional API
 def mlp(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
-    x = keras.layers.Normalization()(inputs)
+    # x = keras.layers.Normalization()(inputs)
     x = keras.layers.Flatten()(inputs)
     x = keras.layers.Dense(512, activation="relu")(x)
     x = keras.layers.Dense(512, activation="relu")(x)
@@ -58,7 +58,7 @@ with strategy.scope():
     optimizer = keras.optimizers.SGD(
         learning_rate=LEARNING_RATE,
         momentum=0.9,
-        # global_clipnorm=GLOBAL_CLIPNORM,
+        global_clipnorm=GLOBAL_CLIPNORM,
     )
     # optimizer = keras.optimizers.Adam(
     #     learning_rate=LEARNING_RATE,
