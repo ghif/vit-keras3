@@ -2,6 +2,7 @@ import os
 os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import json
+import numpy as np
 
 import tensorflow as tf
 import keras
@@ -42,6 +43,17 @@ train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100_simple(BATC
 
 # # Use mixed precision
 # keras.mixed_precision.set_global_policy("mixed_float16")
+class CheckWeightNaNs(keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        print(f"\nChecking weights for NaNs at end of epoch {epoch+1}...")
+        for layer in self.model.layers:
+            for weight in layer.weights:
+                if np.isnan(weight.numpy()).any() or np.isinf(weight.numpy()).any():
+                    print(f"!!! NaN or Inf detected in weight: {weight.name} after epoch {epoch+1} !!!")
+                    # Optionally stop training
+                    # self.model.stop_training = True
+                    return # Stop checking after first detection
+        print("Weights seem OK.")
 
 with strategy.scope():
     # Create the model
@@ -87,9 +99,7 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
-    steps_per_epoch=dataset_info.splits["train"].num_examples // BATCH_SIZE,
-    validation_steps=dataset_info.splits["test"].num_examples // BATCH_SIZE,
-    callbacks=[checkpoint_callback],
+    callbacks=[checkpoint_callback, CheckWeightNaNs()],
 )
 
 loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
