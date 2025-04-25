@@ -10,15 +10,9 @@ import dataset
 # Define full-connected networks with functional API
 def mlp(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
-    # x = keras.layers.Normalization()(inputs)
     x = keras.layers.Flatten()(inputs)
-    x = tf.debugging.check_numerics(x, "Input to Dense 1")
     x = keras.layers.Dense(512, activation="relu")(x)
-    x = tf.debugging.check_numerics(x, "Output of Dense 1")
-    x = keras.layers.Dense(512, activation="relu")(x)
-    x = tf.debugging.check_numerics(x, "Output of Dense 2")
     logits = keras.layers.Dense(num_classes, dtype="float32")(x)
-    logits = tf.debugging.check_numerics(logits, "Output of Logits")
     return keras.Model(inputs=inputs, outputs=logits)
 
 # Constants
@@ -93,6 +87,8 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
+    steps_per_epoch=dataset_info.splits["train"].num_examples // BATCH_SIZE,
+    validation_steps=dataset_info.splits["validation"].num_examples // BATCH_SIZE,
     callbacks=[checkpoint_callback],
 )
 
