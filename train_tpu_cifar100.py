@@ -75,11 +75,37 @@ with strategy.scope():
     #     global_clipnorm=GLOBAL_CLIPNORM,
     # )
 
-    optimizer = keras.optimizers.SGD(
+    # Wrap the optimizer to check gradients
+    class CheckNumericsOptimizer(keras.optimizers.Optimizer):
+        def __init__(self, optimizer, name="CheckNumericsOptimizer", **kwargs):
+            super().__init__(name=name, **kwargs)
+            self._optimizer = optimizer
+
+        def apply_gradients(self, grads_and_vars, **kwargs):
+            checked_grads_and_vars = []
+            for grad, var in grads_and_vars:
+                if grad is not None:
+                    # Check gradients before applying them
+                    checked_grad = tf.debugging.check_numerics(
+                        grad, f"Gradient NaN/Inf check for variable: {var.name}"
+                    )
+                    checked_grads_and_vars.append((checked_grad, var))
+                else:
+                    checked_grads_and_vars.append((grad, var))
+            return self._optimizer.apply_gradients(checked_grads_and_vars, **kwargs)
+
+        # Delegate other methods to the inner optimizer
+        @property
+        def learning_rate(self):
+            return self._optimizer.learning_rate
+
+    original_optimizer = keras.optimizers.SGD(
         learning_rate=LEARNING_RATE,
         momentum=0.9,
         global_clipnorm=GLOBAL_CLIPNORM,
     )
+
+    optimizer = CheckNumericsOptimizer(original_optimizer)
 
     vit_model.compile(
         optimizer=optimizer,
