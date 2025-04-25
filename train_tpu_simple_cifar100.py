@@ -58,7 +58,7 @@ with strategy.scope():
     optimizer = keras.optimizers.SGD(
         learning_rate=LEARNING_RATE,
         momentum=0.9,
-        global_clipnorm=GLOBAL_CLIPNORM,
+        # global_clipnorm=GLOBAL_CLIPNORM,
     )
     # optimizer = keras.optimizers.Adam(
     #     learning_rate=LEARNING_RATE,
