@@ -30,7 +30,6 @@ def mlp(input_shape, num_classes):
     x = keras.layers.Dense(512, activation="relu")(x)
     logits = keras.layers.Dense(num_classes, dtype="float32")(x)
     # tf debugging check numerics for logits
-    # logits = tf.debugging.check_numerics(logits, "Logits contain NaN or Inf values")
     logits = CheckNumericsLayer("Logits contain NaN or Inf values")(logits)
     return keras.Model(inputs=inputs, outputs=logits)
 
@@ -73,6 +72,13 @@ class CheckWeightNaNs(keras.callbacks.Callback):
                     return # Stop checking after first detection
         print("Weights seem OK.")
 
+original_loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+def checked_loss(y_true, y_pred):
+    loss_val = original_loss_fn(y_true, y_pred)
+    loss_val = tf.debugging.check_numerics(loss_val, "Loss contains NaN or Inf values")
+    return loss_val
+
 with strategy.scope():
     # Create the model
     model = mlp(input_shape, dataset_info.features["label"].num_classes)
@@ -95,7 +101,7 @@ with strategy.scope():
 
     model.compile(
         optimizer=optimizer,
-        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        loss=checked_loss,
         metrics=[
             keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
             keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
