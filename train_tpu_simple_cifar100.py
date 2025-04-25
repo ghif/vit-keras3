@@ -14,7 +14,7 @@ def mlp(input_shape, num_classes):
     x = keras.layers.Flatten()(inputs)
     x = keras.layers.Dense(512, activation="relu")(x)
     x = keras.layers.Dense(512, activation="relu")(x)
-    logits = keras.layers.Dense(num_classes)(x)
+    logits = keras.layers.Dense(num_classes, dtype="float32")(x)
     return keras.Model(inputs=inputs, outputs=logits)
 
 # Constants

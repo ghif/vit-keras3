@@ -2,6 +2,14 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import keras
 
+def check_data_numerics(image, label):
+   tf.debugging.check_numerics(image, f"Data check failed for image")
+   return image, label
+
+def preprocess_inputs(image, label):
+    image = tf.cast(image, tf.float32)
+    return image, label
+
 def prepare_cifar100_simple(batch_size, autotune=tf.data.AUTOTUNE):
     data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
     train_dataset = data["train"]
@@ -10,10 +18,15 @@ def prepare_cifar100_simple(batch_size, autotune=tf.data.AUTOTUNE):
     train_dataset = train_dataset.shuffle(
       10 * batch_size, reshuffle_each_iteration=True
     )
+    train_dataset = train_dataset.map(preprocess_inputs, num_parallel_calls=autotune)
+    train_dataset = train_dataset.map(check_data_numerics, num_parallel_calls=autotune)
     train_dataset = train_dataset.batch(batch_size)
     # train_dataset = train_dataset.prefetch(autotune)
 
+    test_dataset = test_dataset.map(preprocess_inputs, num_parallel_calls=autotune)
+    test_dataset = test_dataset.map(check_data_numerics, num_parallel_calls=autotune)
     test_dataset = test_dataset.batch(batch_size)
+    
     # test_dataset = test_dataset.prefetch(autotune)
     return train_dataset, test_dataset, dataset_info
     
