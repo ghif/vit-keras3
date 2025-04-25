@@ -88,7 +88,7 @@ history = model.fit(
     epochs=EPOCHS,
     validation_data=test_dataset,
     steps_per_epoch=dataset_info.splits["train"].num_examples // BATCH_SIZE,
-    validation_steps=dataset_info.splits["validation"].num_examples // BATCH_SIZE,
+    validation_steps=dataset_info.splits["test"].num_examples // BATCH_SIZE,
     callbacks=[checkpoint_callback],
 )
 
