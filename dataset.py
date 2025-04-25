@@ -6,14 +6,16 @@ def check_data_numerics(image, label):
    tf.debugging.check_numerics(image, f"Data check failed for image")
    return image, label
 
-def preprocess_inputs(image, label):
-    image = tf.cast(image, tf.float32)
-    return image, label
+
 
 def prepare_cifar100_simple(batch_size, autotune=tf.data.AUTOTUNE):
     data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
     train_dataset = data["train"]
     test_dataset = data["test"]
+
+    def preprocess_inputs(image, label):
+      image = tf.cast(image, tf.float32)
+      return image, label
 
     train_dataset = train_dataset.shuffle(
       10 * batch_size, reshuffle_each_iteration=True
