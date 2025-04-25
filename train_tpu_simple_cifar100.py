@@ -23,6 +23,18 @@ class CheckNumericsLayer(keras.layers.Layer):
         config.update({"message": self.message})
         return config
 
+# class CheckWeightNaNs(keras.callbacks.Callback):
+#     def on_epoch_end(self, epoch, logs=None):
+#         print(f"\nChecking weights for NaNs at end of epoch {epoch+1}...")
+#         for layer in self.model.layers:
+#             for weight in layer.weights:
+#                 if np.isnan(weight.numpy()).any() or np.isinf(weight.numpy()).any():
+#                     print(f"!!! NaN or Inf detected in weight: {weight.name} after epoch {epoch+1} !!!")
+#                     # Optionally stop training
+#                     # self.model.stop_training = True
+#                     return # Stop checking after first detection
+#         print("Weights seem OK.")
+
 # Define full-connected networks with functional API
 def mlp(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
@@ -60,24 +72,32 @@ train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100_simple(BATC
 
 # # Use mixed precision
 # keras.mixed_precision.set_global_policy("mixed_float16")
-class CheckWeightNaNs(keras.callbacks.Callback):
+loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+def evaluate_model(model, tf_dataset):
+    losses = []
+    for batch in tf_dataset:
+        images, labels = batch
+        predictions = model.predict(images, verbose=None)
+        loss_batch = loss_fn(labels, predictions) # sum over batch size
+        losses.append(loss_batch.numpy())
+
+    loss = np.mean(losses)
+    return loss
+
+class EvaluationCallback(keras.callbacks.Callback):
+    def __init__(self, train_dataset, test_dataset):
+        super().__init__()
+        self.train_dataset = train_dataset
+        self.test_dataset = test_dataset
+    
     def on_epoch_end(self, epoch, logs=None):
-        print(f"\nChecking weights for NaNs at end of epoch {epoch+1}...")
-        for layer in self.model.layers:
-            for weight in layer.weights:
-                if np.isnan(weight.numpy()).any() or np.isinf(weight.numpy()).any():
-                    print(f"!!! NaN or Inf detected in weight: {weight.name} after epoch {epoch+1} !!!")
-                    # Optionally stop training
-                    # self.model.stop_training = True
-                    return # Stop checking after first detection
-        print("Weights seem OK.")
+        print("Epoch {}:".format(epoch + 1))
 
-original_loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        train_loss = evaluate_model(self.model, self.train_dataset)
+        test_loss = evaluate_model(self.model, self.test_dataset)
 
-def checked_loss(y_true, y_pred):
-    loss_val = original_loss_fn(y_true, y_pred)
-    loss_val = tf.debugging.check_numerics(loss_val, "Loss contains NaN or Inf values")
-    return loss_val
+        print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f})")
 
 with strategy.scope():
     # Create the model
@@ -101,7 +121,7 @@ with strategy.scope():
 
     model.compile(
         optimizer=optimizer,
-        loss=checked_loss,
+        loss=loss_fn,
         metrics=[
             keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
             keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
@@ -123,7 +143,7 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
-    callbacks=[checkpoint_callback, CheckWeightNaNs()],
+    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
 )
 
 loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
