@@ -2,7 +2,21 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import keras
 
+def prepare_cifar100_simple(batch_size, autotune=tf.data.AUTOTUNE):
+    data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
+    train_dataset = data["train"]
+    test_dataset = data["test"]
 
+    train_dataset = train_dataset.shuffle(
+      10 * batch_size, reshuffle_each_iteration=True
+    )
+    train_dataset = train_dataset.batch(batch_size)
+    train_dataset = train_dataset.prefetch(autotune)
+
+    test_dataset = test_dataset.batch(batch_size)
+    test_dataset = test_dataset.prefetch(autotune)
+    return train_dataset, test_dataset, dataset_info
+    
 def prepare_cifar100(batch_size, target_image_shape, autotune=tf.data.AUTOTUNE):
     data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
     train_dataset = data["train"]

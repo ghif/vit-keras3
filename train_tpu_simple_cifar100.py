@@ -10,7 +10,7 @@ import dataset
 # Define full-connected networks with functional API
 def mlp(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
-    # x = keras.layers.Normalization()(inputs)
+    x = keras.layers.Normalization()(inputs)
     x = keras.layers.Flatten()(inputs)
     x = keras.layers.Dense(512, activation="relu")(x)
     x = keras.layers.Dense(512, activation="relu")(x)
@@ -40,10 +40,10 @@ except Exception as e:
 
 # Prepare the data
 input_shape = (32, 32, 3)
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, input_shape)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100_simple(BATCH_SIZE, input_shape)
 
-# Use mixed precision
-keras.mixed_precision.set_global_policy("mixed_float16")
+# # Use mixed precision
+# keras.mixed_precision.set_global_policy("mixed_float16")
 
 with strategy.scope():
     # Create the model

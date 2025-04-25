@@ -27,7 +27,7 @@ MODEL_PREFIX = "mlp_noaug"
 
 # Prepare the data
 input_shape = (32, 32, 3)
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, input_shape)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100_simple(BATCH_SIZE)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
