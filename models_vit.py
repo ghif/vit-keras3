@@ -86,8 +86,8 @@ def normalize_and_resize(images, image_size):
     Returns:
         Tensor: The normalized and resized batch of images.
     """
-    z = layers.Resizing(image_size, image_size)(images)
-    z = layers.Normalization()(z)
+    z = layers.Normalization()(images)
+    z = layers.Resizing(image_size, image_size)(z)
     return z
 
 def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate):

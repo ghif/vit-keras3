@@ -75,75 +75,11 @@ with strategy.scope():
     #     global_clipnorm=GLOBAL_CLIPNORM,
     # )
 
-    # Wrap the optimizer to check gradients
-    class CheckNumericsOptimizer(keras.optimizers.Optimizer):
-        def __init__(self, optimizer, name="CheckNumericsOptimizer", **kwargs):
-            # Get learning rate from the inner optimizer
-            lr = optimizer.learning_rate
-            # Pass the learning rate to the parent initializer
-            super().__init__(learning_rate=lr, name=name, **kwargs)
-            self._optimizer = optimizer
-            # Store the inner optimizer's attributes if needed for delegation
-            self._config = optimizer.get_config()
-
-        def build(self, var_list):
-            # Build the inner optimizer
-            self._optimizer.build(var_list)
-            super().build(var_list)
-
-        def apply_gradients(self, grads_and_vars, **kwargs):
-            checked_grads_and_vars = []
-            for grad, var in grads_and_vars:
-                if grad is not None:
-                    # Check gradients before applying them
-                    try:
-                        checked_grad = tf.debugging.check_numerics(
-                            grad, f"Gradient NaN/Inf check for variable: {var.name}"
-                        )
-                        checked_grads_and_vars.append((checked_grad, var))
-                    except tf.errors.InvalidArgumentError as e:
-                        print(f"!!! NaN/Inf detected in gradient for variable: {var.name} !!!")
-                        # Optionally re-raise or handle the error
-                        raise e
-                else:
-                    checked_grads_and_vars.append((grad, var))
-            # Delegate the actual application to the inner optimizer
-            return self._optimizer.apply_gradients(checked_grads_and_vars, **kwargs)
-
-        # Delegate learning rate property explicitly
-        @property
-        def learning_rate(self):
-            # Ensure it accesses the inner optimizer's potentially changing LR
-            return self._optimizer.learning_rate
-
-        # Delegate other essential methods/properties if needed by callbacks etc.
-        @property
-        def iterations(self):
-            return self._optimizer.iterations
-
-        def get_config(self):
-            # Return the inner optimizer's config for serialization
-            config = super().get_config()
-            config.update({
-                "optimizer": keras.optimizers.serialize(self._optimizer),
-            })
-            return config
-
-        @classmethod
-        def from_config(cls, config, custom_objects=None):
-            optimizer_config = config.pop("optimizer")
-            optimizer = keras.optimizers.deserialize(
-                optimizer_config, custom_objects=custom_objects
-            )
-            return cls(optimizer, **config)
-
-    original_optimizer = keras.optimizers.SGD(
+    optimizer = keras.optimizers.SGD(
         learning_rate=LEARNING_RATE,
         momentum=0.9,
         global_clipnorm=GLOBAL_CLIPNORM,
     )
-
-    optimizer = CheckNumericsOptimizer(original_optimizer)
 
     vit_model.compile(
         optimizer=optimizer,
