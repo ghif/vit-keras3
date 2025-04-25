@@ -8,6 +8,21 @@ import tensorflow as tf
 import keras
 import dataset
 
+# Define a custom layer to wrap tf.debugging.check_numerics
+class CheckNumericsLayer(keras.layers.Layer):
+    def __init__(self, message, **kwargs):
+        super().__init__(**kwargs)
+        self.message = message
+
+    def call(self, inputs):
+        return tf.debugging.check_numerics(inputs, self.message)
+
+    # Optional: Add get_config for serialization if needed
+    def get_config(self):
+        config = super().get_config()
+        config.update({"message": self.message})
+        return config
+
 # Define full-connected networks with functional API
 def mlp(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
@@ -15,8 +30,8 @@ def mlp(input_shape, num_classes):
     x = keras.layers.Dense(512, activation="relu")(x)
     logits = keras.layers.Dense(num_classes, dtype="float32")(x)
     # tf debugging check numerics for logits
-    logits = tf.debugging.check_numerics(logits, "Logits contain NaN or Inf values")
-
+    # logits = tf.debugging.check_numerics(logits, "Logits contain NaN or Inf values")
+    logits = CheckNumericsLayer("Logits contain NaN or Inf values")(logits)
     return keras.Model(inputs=inputs, outputs=logits)
 
 # Constants
