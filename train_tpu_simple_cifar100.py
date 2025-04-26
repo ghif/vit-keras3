@@ -88,6 +88,19 @@ class EvaluationCallback(keras.callbacks.Callback):
         (train_loss, train_acc, train_top_5_acc) = self.model.evaluate(self.train_dataset, verbose=None)
         (test_loss, test_acc, test_top_5_acc) = self.model.evaluate(self.test_dataset, verbose=None)
 
+        # Get prediction on a single batch
+        image, label = next(iter(self.test_dataset))
+        pred = self.model.predict(image)
+
+        # Check for NaN or Inf in predictions
+        if np.isnan(pred).any() or np.isinf(pred).any():
+            print("!!! NaN or Inf detected in predictions !!!")
+        else:
+            print("Predictions seem OK.")
+            print(f" > Pred: {pred}")
+            print(f" > Label: {label}")
+        
+
         print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f})")
         print(f" > Train and test accuracy: (top-1: {train_acc:.4f}, top-5: {train_top_5_acc:.4f}), (top-1: {test_acc:.4f}, top-5: {test_top_5_acc:.4f})")
 
@@ -125,10 +138,10 @@ with strategy.scope():
         optimizer=optimizer,
         loss=checked_loss_fn,
         metrics=[]
-        # metrics=[
-        #     keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-        #     keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
-        # ],
+        metrics=[
+            keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+            keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+        ],
     )
 
 # Checkpoint callback
