@@ -23,17 +23,17 @@ class CheckNumericsLayer(keras.layers.Layer):
         config.update({"message": self.message})
         return config
 
-# class CheckWeightNaNs(keras.callbacks.Callback):
-#     def on_epoch_end(self, epoch, logs=None):
-#         print(f"\nChecking weights for NaNs at end of epoch {epoch+1}...")
-#         for layer in self.model.layers:
-#             for weight in layer.weights:
-#                 if np.isnan(weight.numpy()).any() or np.isinf(weight.numpy()).any():
-#                     print(f"!!! NaN or Inf detected in weight: {weight.name} after epoch {epoch+1} !!!")
-#                     # Optionally stop training
-#                     # self.model.stop_training = True
-#                     return # Stop checking after first detection
-#         print("Weights seem OK.")
+class CheckWeightNaNs(keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        print(f"\nChecking weights for NaNs at end of epoch {epoch+1}...")
+        for layer in self.model.layers:
+            for weight in layer.weights:
+                if np.isnan(weight.numpy()).any() or np.isinf(weight.numpy()).any():
+                    print(f"!!! NaN or Inf detected in weight: {weight.name} after epoch {epoch+1} !!!")
+                    # Optionally stop training
+                    # self.model.stop_training = True
+                    return # Stop checking after first detection
+        print("Weights seem OK.")
 
 # Define full-connected networks with functional API
 def mlp(input_shape, num_classes):
@@ -136,7 +136,7 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
-    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
+    callbacks=[checkpoint_callback, CheckWeightNaNs(), EvaluationCallback(train_dataset, test_dataset)],
 )
 
 loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)

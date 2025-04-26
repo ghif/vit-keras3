@@ -7,6 +7,18 @@ import numpy as np
 import keras
 import dataset
 
+class CheckWeightNaNs(keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        print(f"\nChecking weights for NaNs at end of epoch {epoch+1}...")
+        for layer in self.model.layers:
+            for weight in layer.weights:
+                if np.isnan(weight.numpy()).any() or np.isinf(weight.numpy()).any():
+                    print(f"!!! NaN or Inf detected in weight: {weight.name} after epoch {epoch+1} !!!")
+                    # Optionally stop training
+                    # self.model.stop_training = True
+                    return # Stop checking after first detection
+        print("Weights seem OK.")
+
 # Define loss function
 loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 accuracy_fn = keras.metrics.SparseCategoricalAccuracy(name="accuracy")
@@ -97,7 +109,7 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
-    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
+    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset), CheckWeightNaNs()],
 )
 
 loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
