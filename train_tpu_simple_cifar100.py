@@ -137,7 +137,6 @@ with strategy.scope():
     model.compile(
         optimizer=optimizer,
         loss=checked_loss_fn,
-        metrics=[]
         metrics=[
             keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
             keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
