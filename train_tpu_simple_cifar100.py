@@ -40,7 +40,9 @@ def mlp(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
     x = keras.layers.Flatten()(inputs)
     x = keras.layers.Dense(512, activation="relu")(x)
-    logits = keras.layers.Dense(num_classes, dtype="float32")(x)
+
+    x_checked = CheckNumericsLayer("Hidden layer contains NaN or Inf values")(x)
+    logits = keras.layers.Dense(num_classes, dtype="float32")(x_checked)
     # tf debugging check numerics for logits
     logits = CheckNumericsLayer("Logits contain NaN or Inf values")(logits)
     return keras.Model(inputs=inputs, outputs=logits)
@@ -90,7 +92,14 @@ class EvaluationCallback(keras.callbacks.Callback):
         print(f" > Train and test accuracy: (top-1: {train_acc:.4f}, top-5: {train_top_5_acc:.4f}), (top-1: {test_acc:.4f}, top-5: {test_top_5_acc:.4f})")
 
 
-loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+original_loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+def checked_loss_fn(y_true, y_pred):
+    y_pred = tf.debugging.check_numerics(y_pred, "y_pred contains NaN or Inf values")
+    loss_val = original_loss_fn(y_true, y_pred)
+    loss_val = tf.debugging.check_numerics(loss_val, "Loss output contains NaN or Inf values")
+    return loss_val
+
 
 with strategy.scope():
     # Create the model
@@ -114,7 +123,7 @@ with strategy.scope():
 
     model.compile(
         optimizer=optimizer,
-        loss=loss_fn,
+        loss=checked_loss_fn,
         metrics=[
             keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
             keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
@@ -133,7 +142,7 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
 
 history = model.fit(
     train_dataset,
-    batch_size=BATCH_SIZE,
+    # batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
     callbacks=[checkpoint_callback, CheckWeightNaNs(), EvaluationCallback(train_dataset, test_dataset)],
