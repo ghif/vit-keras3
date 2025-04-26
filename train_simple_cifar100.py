@@ -6,6 +6,7 @@ import numpy as np
 
 import keras
 import dataset
+from keras import ops
 
 class CheckWeightNaNs(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -21,6 +22,11 @@ class CheckWeightNaNs(keras.callbacks.Callback):
 
 # Define loss function
 loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+loss_fn_test = keras.losses.SparseCategoricalCrossentropy(
+    from_logits=True,
+    # reduction=None,
+    reduction="sum"
+)
 accuracy_fn = keras.metrics.SparseCategoricalAccuracy(name="accuracy")
 top_5_accuracy_fn = keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy")
 
@@ -36,7 +42,26 @@ class EvaluationCallback(keras.callbacks.Callback):
         (train_loss, train_acc, train_top_5_acc) = self.model.evaluate(self.train_dataset, verbose=None)
         (test_loss, test_acc, test_top_5_acc) = self.model.evaluate(self.test_dataset, verbose=None)
 
-        print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f})")
+        # Check predictions on test_dataset
+        # test_losses = []
+        test_losses = 0.
+        n_samples = 0
+        for batch in self.test_dataset: 
+            image, label = batch
+            pred = self.model.predict(image, verbose=None)
+            # Check for NaN or Inf in predictions
+            if np.isnan(pred).any() or np.isinf(pred).any():
+                print("!!! NaN or Inf detected in predictions !!!")
+                break
+
+            # Check loss
+            loss_val = loss_fn_test(label, pred)
+            test_losses += loss_val.numpy()
+            n_samples += image.shape[0]
+            
+        test_loss_mean = test_losses / n_samples
+            
+        print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f}) -- (test-loss debugging: {test_loss_mean:.4f})")
         print(f" > Train and test accuracy: (top-1: {train_acc:.4f}, top-5: {train_top_5_acc:.4f}), (top-1: {test_acc:.4f}, top-5: {test_top_5_acc:.4f})")
         
 
@@ -53,6 +78,7 @@ def mlp(input_shape, num_classes):
 # Constants
 BATCH_SIZE = 128
 LEARNING_RATE = 1e-4
+WEIGHT_DECAY = 1e-4
 GLOBAL_CLIPNORM = 1.0
 EPOCHS = 100
 MODEL_PREFIX = "mlp_noaug"
@@ -81,7 +107,7 @@ for i, layer in enumerate(model.layers):
 # )
 optimizer = keras.optimizers.Adam(
     learning_rate=LEARNING_RATE,
-    # weight_decay=WEIGHT_DECAY,
+    weight_decay=WEIGHT_DECAY,
     global_clipnorm=GLOBAL_CLIPNORM,
 )
 

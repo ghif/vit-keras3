@@ -8,6 +8,56 @@ import tensorflow as tf
 import keras
 import dataset
 
+# Setup TPU configuration
+try:
+    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu="local")
+
+    tf.config.experimental_connect_to_cluster(resolver)
+    tf.tpu.experimental.initialize_tpu_system(resolver)
+    strategy = tf.distribute.TPUStrategy(resolver)
+    print("Successfully initialized TPU.")
+    print("All devices: ", tf.config.list_logical_devices('TPU'))
+except Exception as e:
+    print(f"Failed to initialize TPU: {e}")
+
+loss_fn_test = keras.losses.SparseCategoricalCrossentropy(
+    from_logits=True,
+    reduction=None
+)
+
+class EvaluationCallback(keras.callbacks.Callback):
+    def __init__(self, train_dataset, test_dataset):
+        super().__init__()
+        self.train_dataset = train_dataset
+        self.test_dataset = test_dataset
+    
+    def on_epoch_end(self, epoch, logs=None):
+        print("Epoch {}:".format(epoch + 1))
+
+        (train_loss, train_acc, train_top_5_acc) = self.model.evaluate(self.train_dataset, verbose=None)
+        (test_loss, test_acc, test_top_5_acc) = self.model.evaluate(self.test_dataset, verbose=None)
+
+        # Check predictions on test_dataset
+        test_losses = 0.
+        n_samples = 0
+        for batch in self.test_dataset: 
+            image, label = batch
+            pred = self.model.predict(image, verbose=None)
+            # Check for NaN or Inf in predictions
+            if np.isnan(pred).any() or np.isinf(pred).any():
+                print("!!! NaN or Inf detected in predictions !!!")
+                break
+
+            # Check loss
+            loss_val = loss_fn_test(label, pred)
+            test_losses += loss_val.numpy()
+            n_samples += image.shape[0]
+            
+        test_loss_mean = test_losses / n_samples
+            
+        print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f}) -- (test-loss debugging: {test_loss_mean:.4f})")
+        print(f" > Train and test accuracy: (top-1: {train_acc:.4f}, top-5: {train_top_5_acc:.4f}), (top-1: {test_acc:.4f}, top-5: {test_top_5_acc:.4f})")
+
 # Define a custom layer to wrap tf.debugging.check_numerics
 class CheckNumericsLayer(keras.layers.Layer):
     def __init__(self, message, **kwargs):
@@ -40,6 +90,7 @@ def mlp(input_shape, num_classes):
     inputs = keras.Input(shape=input_shape)
     x = keras.layers.Flatten()(inputs)
     x = keras.layers.Dense(512, activation="relu")(x)
+    x = keras.layers.Dense(512, activation="relu")(x)
 
     x_checked = CheckNumericsLayer("Hidden layer contains NaN or Inf values")(x)
     logits = keras.layers.Dense(num_classes, dtype="float32")(x_checked)
@@ -55,54 +106,12 @@ GLOBAL_CLIPNORM = 1.0
 EPOCHS = 100
 MODEL_PREFIX = "mlp_noaug"
 
-# Setup TPU configuration
-try:
-    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu="local")
-
-    tf.config.experimental_connect_to_cluster(resolver)
-    tf.tpu.experimental.initialize_tpu_system(resolver)
-    strategy = tf.distribute.TPUStrategy(resolver)
-    print("Successfully initialized TPU.")
-    print("All devices: ", tf.config.list_logical_devices('TPU'))
-except Exception as e:
-    print(f"Failed to initialize TPU: {e}")
-
-
 # Prepare the data
 input_shape = (32, 32, 3)
 train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100_simple(BATCH_SIZE)
 
 # # Use mixed precision
 # keras.mixed_precision.set_global_policy("mixed_float16")
-
-
-class EvaluationCallback(keras.callbacks.Callback):
-    def __init__(self, train_dataset, test_dataset):
-        super().__init__()
-        self.train_dataset = train_dataset
-        self.test_dataset = test_dataset
-    
-    def on_epoch_end(self, epoch, logs=None):
-        print("Epoch {}:".format(epoch + 1))
-
-        (train_loss, train_acc, train_top_5_acc) = self.model.evaluate(self.train_dataset, verbose=None)
-        (test_loss, test_acc, test_top_5_acc) = self.model.evaluate(self.test_dataset, verbose=None)
-
-        # Get prediction on a single batch
-        image, label = next(iter(self.test_dataset))
-        pred = self.model.predict(image)
-
-        # Check for NaN or Inf in predictions
-        if np.isnan(pred).any() or np.isinf(pred).any():
-            print("!!! NaN or Inf detected in predictions !!!")
-        else:
-            print("Predictions seem OK.")
-            print(f" > Pred: {pred}")
-            print(f" > Label: {label}")
-        
-
-        print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f})")
-        print(f" > Train and test accuracy: (top-1: {train_acc:.4f}, top-5: {train_top_5_acc:.4f}), (top-1: {test_acc:.4f}, top-5: {test_top_5_acc:.4f})")
 
 
 original_loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
