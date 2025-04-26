@@ -124,10 +124,11 @@ with strategy.scope():
     model.compile(
         optimizer=optimizer,
         loss=checked_loss_fn,
-        metrics=[
-            keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-            keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
-        ],
+        metrics=[]
+        # metrics=[
+        #     keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+        #     keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+        # ],
     )
 
 # Checkpoint callback
@@ -142,7 +143,6 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
 
 history = model.fit(
     train_dataset,
-    # batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
     callbacks=[checkpoint_callback, CheckWeightNaNs(), EvaluationCallback(train_dataset, test_dataset)],
