@@ -130,13 +130,8 @@ def mlp(input_shape, num_classes):
     x = keras.layers.Flatten()(inputs)
     x = keras.layers.Dense(512, activation="relu")(x)
     x = keras.layers.Dense(512, activation="relu")(x)
-
-    x_checked = CheckNumericsLayer("Hidden layer contains NaN or Inf values")(x)
-    logits = keras.layers.Dense(num_classes, dtype="float32")(x_checked)
-    # tf debugging check numerics for logits
-    logits = CheckNumericsLayer("Logits contain NaN or Inf values")(logits)
+    logits = keras.layers.Dense(num_classes, dtype="float32")(x)
     return keras.Model(inputs=inputs, outputs=logits)
-
 
 
 # Prepare the data
