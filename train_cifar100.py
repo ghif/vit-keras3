@@ -35,17 +35,22 @@ BATCH_SIZE = conf["batch_size"]
 EPOCHS = conf["epochs"]
 GLOBAL_CLIPNORM = conf["global_clipnorm"]
 AUGMENT = True
+MIXED_PRECISION = False
 
 if AUGMENT:
     MODEL_PREFIX = "vit_base_96_aug"
 else:
     MODEL_PREFIX = "vit_base_96_noaug"
 
+if not MIXED_PRECISION:
+    MODEL_PREFIX += "_fp32"
+
 # Prepare the data
 train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=0, augment=AUGMENT)
 
-# Use mixed precision
-keras.mixed_precision.set_global_policy("mixed_float16")
+if MIXED_PRECISION:
+    # Use mixed precision
+    keras.mixed_precision.set_global_policy("mixed_float16")
 
 vit_model = M.vit_classifier(
     image_shape=IMAGE_SHAPE,
