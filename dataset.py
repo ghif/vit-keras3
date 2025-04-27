@@ -1,8 +1,12 @@
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import keras
+from keras import layers
 
 AUTOTUNE = tf.data.AUTOTUNE
+
+random_flip = layers.RandomFlip("horizontal")
+random_rotation = layers.RandomRotation(factor=0.1)
 
 def preprocess_inputs(image, label):
     # image = tf.cast(image, tf.float32)
@@ -55,13 +59,25 @@ def prepare(ds, batch_size, target_image_shape, st_type=-1, shuffle=False, augme
     ds = ds.batch(batch_size)
 
     # Use data augmentation only on the training set
+    if augment:
+        # Random horizontal flip
+        ds = ds.map(
+            lambda x, y: (random_flip(x), y),
+            num_parallel_calls=AUTOTUNE,
+        )
+
+        # Random rotation
+        ds = ds.map(
+            lambda x, y: (random_rotation(x), y),
+            num_parallel_calls=AUTOTUNE,
+        )
 
     # Use buffered prefetching on all datasets
     ds = ds.prefetch(buffer_size=AUTOTUNE)
 
     return ds
   
-def prepare_cifar100(batch_size, target_image_shape, st_type=0):
+def prepare_cifar100(batch_size, target_image_shape, st_type=0, augment=False):
     data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
     train_dataset = data["train"]
     test_dataset = data["test"]
@@ -72,7 +88,7 @@ def prepare_cifar100(batch_size, target_image_shape, st_type=0):
         target_image_shape, 
         st_type=st_type, 
         shuffle=True, 
-        augment=True
+        augment=augment
     )
     test_dataset = prepare(
         test_dataset, 

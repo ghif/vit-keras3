@@ -38,14 +38,7 @@ EPOCHS = conf["epochs"]
 GLOBAL_CLIPNORM = conf["global_clipnorm"]
 
 # Prepare the data
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=0)
-
-# Get all image samples from train_dataset to calculate mean and std
-X_train = []
-for image, _ in tfds.as_numpy(train_dataset):
-    X_train.append(image)
-
-X_train = np.vstack(X_train)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=0, augment=True)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
