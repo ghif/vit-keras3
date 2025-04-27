@@ -3,7 +3,10 @@ os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import json
 import argparse
+import numpy as np
+
 import keras
+import tensorflow_datasets as tfds
 
 import models_vit as M
 import dataset
@@ -34,21 +37,20 @@ BATCH_SIZE = conf["batch_size"]
 EPOCHS = conf["epochs"]
 GLOBAL_CLIPNORM = conf["global_clipnorm"]
 
-
 # Prepare the data
-input_shape = (32, 32, 3)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE)
 
-# Prepare the data
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, input_shape)
+# Get all image samples from train_dataset to calculate mean and std
+X_train = []
+for image, _ in tfds.as_numpy(train_dataset):
+    X_train.append(image)
 
-# train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True)
-# test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
+X_train = np.vstack(X_train)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
 
 vit_model = M.vit_classifier(
-    orig_image_shape=input_shape,
     image_shape=IMAGE_SHAPE,
     patch_size=PATCH_SIZE,
     num_layers=NUM_LAYERS,
@@ -59,7 +61,10 @@ vit_model = M.vit_classifier(
     num_classes=NUM_CLASSES
 )
 
-# vit_model.layers[1].adapt(x_train)
+# Calculate mean and std
+vit_model.layers[1].layers[1].adapt(X_train)
+
+# Print model
 print(vit_model.summary(expand_nested=True))
 
 for i, layer in enumerate(vit_model.layers):

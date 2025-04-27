@@ -90,6 +90,10 @@ def normalize_and_resize(images, image_size):
     z = layers.Resizing(image_size, image_size)(z)
     return z
 
+def preprocess(images):
+    z = layers.Normalization()(images)
+    return z
+
 def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate):
     """
     Create an Encoder 1D block.
@@ -153,12 +157,11 @@ def vit_encoder(inputs, num_layers, num_heads, hidden_dim, mlp_dim, attention_dr
         )
     return x
 
-def vit_backbone(orig_image_shape, image_shape, patch_size, num_layers, num_heads, mlp_dim, attention_dropout_rate, dropout_rate):
+def vit_backbone(image_shape, patch_size, num_layers, num_heads, mlp_dim, attention_dropout_rate, dropout_rate):
     """
     Create a Vision Transformer backbone.
 
     Args:
-        orig_image_shape (tuple): Shape of the input images.
         image_shape (tuple): Shape of the images after resizing and augmentation.
         patch_size (int): Size of the patches.
         num_layers (int): Number of encoder layers.
@@ -172,10 +175,11 @@ def vit_backbone(orig_image_shape, image_shape, patch_size, num_layers, num_head
     num_patches = (image_shape[0] // patch_size) * (image_shape[1] // patch_size)
     hidden_dim = patch_size * patch_size * 3
 
-    inputs = keras.Input(shape=orig_image_shape)
+    inputs = keras.Input(shape=image_shape)
     # augmented = augment_and_resize(inputs, image_shape[0])
-    augmented = normalize_and_resize(inputs, image_shape[0])
-    patches = extract_patches(augmented, patch_size)
+    # augmented = normalize_and_resize(inputs, image_shape[0])
+    preprocessed_inputs = preprocess(inputs)
+    patches = extract_patches(preprocessed_inputs, patch_size)
     encoded_patches = encode_patches(patches, num_patches, hidden_dim)
 
     y = vit_encoder(
@@ -183,12 +187,11 @@ def vit_backbone(orig_image_shape, image_shape, patch_size, num_layers, num_head
     )
     return keras.Model(inputs=inputs, outputs=y)
 
-def vit_classifier(orig_image_shape, image_shape, patch_size, num_layers, num_heads, mlp_dim, attention_dropout_rate, dropout_rate, num_classes):
+def vit_classifier(image_shape, patch_size, num_layers, num_heads, mlp_dim, attention_dropout_rate, dropout_rate, num_classes):
     """
     Create a Vision Transformer classifier using ViT Backbone.
 
     Args:
-        orig_image_shape (tuple): Shape of the input images.
         image_shape (tuple): Shape of the images after resizing and augmentation.
         patch_size (int): Size of the patches.
         num_layers (int): Number of encoder layers.
@@ -201,7 +204,6 @@ def vit_classifier(orig_image_shape, image_shape, patch_size, num_layers, num_he
         Vision Transformer classifier (keras.Model).
     """
     backbone = vit_backbone(
-        orig_image_shape=orig_image_shape,
         image_shape=image_shape,
         patch_size=patch_size,
         num_layers=num_layers,
@@ -232,7 +234,6 @@ if __name__ == "__main__":
     with open(config_path) as f:
         conf = json.load(f)
     
-    ORIG_IMAGE_SHAPE = (32, 32, 3)
     IMAGE_SHAPE = tuple(conf["image_shape"])
     PATCH_SIZE = conf["patch_size"]
     NUM_LAYERS = conf["num_layers"]
@@ -248,7 +249,6 @@ if __name__ == "__main__":
     BATCH_SIZE = conf["batch_size"]
     
     classifier_model = vit_classifier(
-        orig_image_shape=ORIG_IMAGE_SHAPE,
         image_shape=IMAGE_SHAPE,
         patch_size=PATCH_SIZE,
         num_layers=NUM_LAYERS,
