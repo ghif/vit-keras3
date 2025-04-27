@@ -1,12 +1,12 @@
 import tensorflow as tf
 import tensorflow_datasets as tfds
-import keras
 from keras import layers
 
 AUTOTUNE = tf.data.AUTOTUNE
 
 random_flip = layers.RandomFlip("horizontal")
 random_rotation = layers.RandomRotation(factor=0.1)
+random_zoom = layers.RandomZoom(height_factor=0.2, width_factor=0.2)
 
 def preprocess_inputs(image, label):
     # image = tf.cast(image, tf.float32)
@@ -68,6 +68,12 @@ def prepare(ds, batch_size, target_image_shape, st_type=-1, shuffle=False, augme
         # Random rotation
         ds = ds.map(
             lambda x, y: (random_rotation(x), y),
+            num_parallel_calls=AUTOTUNE,
+        )
+
+        # Random zoom
+        ds = ds.map(
+            lambda x, y: (random_zoom(x), y),
             num_parallel_calls=AUTOTUNE,
         )
 
