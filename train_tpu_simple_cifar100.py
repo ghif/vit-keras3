@@ -20,6 +20,9 @@ try:
 except Exception as e:
     print(f"Failed to initialize TPU: {e}")
 
+
+loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
 loss_fn_test = keras.losses.SparseCategoricalCrossentropy(
     from_logits=True,
     reduction="sum"
@@ -131,7 +134,7 @@ BATCH_SIZE = 128
 LEARNING_RATE = 1e-6
 # WEIGHT_DECAY = 1e-4
 GLOBAL_CLIPNORM = 1.0
-EPOCHS = 100
+EPOCHS = 5
 MODEL_PREFIX = "mlp_noaug"
 
 # Prepare the data
@@ -140,16 +143,6 @@ train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100_simple(BATC
 
 # # Use mixed precision
 # keras.mixed_precision.set_global_policy("mixed_float16")
-
-
-original_loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-
-def checked_loss_fn(y_true, y_pred):
-    y_pred = tf.debugging.check_numerics(y_pred, "y_pred contains NaN or Inf values")
-    loss_val = original_loss_fn(y_true, y_pred)
-    loss_val = tf.debugging.check_numerics(loss_val, "Loss output contains NaN or Inf values")
-    return loss_val
-
 
 with strategy.scope():
     # Create the model
@@ -161,19 +154,19 @@ with strategy.scope():
         print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
     # Train the model
-    optimizer = keras.optimizers.SGD(
-        learning_rate=LEARNING_RATE,
-        momentum=0.9,
-        global_clipnorm=GLOBAL_CLIPNORM,
-    )
-    # optimizer = keras.optimizers.Adam(
+    # optimizer = keras.optimizers.SGD(
     #     learning_rate=LEARNING_RATE,
+    #     momentum=0.9,
     #     global_clipnorm=GLOBAL_CLIPNORM,
     # )
+    optimizer = keras.optimizers.Adam(
+        learning_rate=LEARNING_RATE,
+        global_clipnorm=GLOBAL_CLIPNORM,
+    )
 
     model.compile(
         optimizer=optimizer,
-        loss=checked_loss_fn,
+        loss=loss_fn,
         metrics=[
             accuracy_fn,
             top_5_accuracy_fn,
