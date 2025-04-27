@@ -8,17 +8,6 @@ import keras
 import dataset
 from keras import ops
 
-class CheckWeightNaNs(keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        print(f"\nChecking weights for NaNs at end of epoch {epoch+1}...")
-        for layer in self.model.layers:
-            for weight in layer.weights:
-                if np.isnan(weight.numpy()).any() or np.isinf(weight.numpy()).any():
-                    print(f"!!! NaN or Inf detected in weight: {weight.name} after epoch {epoch+1} !!!")
-                    # Optionally stop training
-                    # self.model.stop_training = True
-                    return # Stop checking after first detection
-        print("Weights seem OK.")
 
 # Define loss function
 loss_fn = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
@@ -30,6 +19,48 @@ loss_fn_test = keras.losses.SparseCategoricalCrossentropy(
 accuracy_fn = keras.metrics.SparseCategoricalAccuracy(name="accuracy")
 top_5_accuracy_fn = keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy")
 
+def evaluate_model(model, tf_dataset):
+    loss = 0.
+    accuracy = 0.
+    n_correct = 0
+
+    top_5_accuracy = 0.
+    n_top_5_correct = 0
+
+    n_samples = 0
+    
+    for batch in tf_dataset: 
+        image, label = batch
+        pred = model.predict(image, verbose=None)
+        # Check for NaN or Inf in predictions
+        if np.isnan(pred).any() or np.isinf(pred).any():
+            print("!!! NaN or Inf detected in predictions !!!")
+            break
+
+        bs = image.shape[0]
+
+        # Check loss
+        loss_val = loss_fn_test(label, pred)
+        loss += loss_val.numpy()
+        
+        # Check accuracy
+        acc_val = accuracy_fn(label, pred)
+        count_correct = acc_val.numpy() * bs
+        n_correct += count_correct
+
+        
+        top_5_acc_val = top_5_accuracy_fn(label, pred)
+        count_top_5_correct = top_5_acc_val.numpy() * bs
+        n_top_5_correct += count_top_5_correct
+        
+        n_samples += bs
+    
+    loss /= n_samples
+    accuracy = n_correct / n_samples
+    top_5_accuracy = n_top_5_correct / n_samples
+    
+    return (loss, accuracy, top_5_accuracy)
+
 class EvaluationCallback(keras.callbacks.Callback):
     def __init__(self, train_dataset, test_dataset):
         super().__init__()
@@ -39,29 +70,11 @@ class EvaluationCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         print("Epoch {}:".format(epoch + 1))
 
-        (train_loss, train_acc, train_top_5_acc) = self.model.evaluate(self.train_dataset, verbose=None)
-        (test_loss, test_acc, test_top_5_acc) = self.model.evaluate(self.test_dataset, verbose=None)
-
-        # Check predictions on test_dataset
-        # test_losses = []
-        test_losses = 0.
-        n_samples = 0
-        for batch in self.test_dataset: 
-            image, label = batch
-            pred = self.model.predict(image, verbose=None)
-            # Check for NaN or Inf in predictions
-            if np.isnan(pred).any() or np.isinf(pred).any():
-                print("!!! NaN or Inf detected in predictions !!!")
-                break
-
-            # Check loss
-            loss_val = loss_fn_test(label, pred)
-            test_losses += loss_val.numpy()
-            n_samples += image.shape[0]
-            
-        test_loss_mean = test_losses / n_samples
-            
-        print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f}) -- (test-loss debugging: {test_loss_mean:.4f})")
+        # Calculate evaluation manually
+        (train_loss, train_acc, train_top_5_acc) = evaluate_model(self. model, self.train_dataset)
+        (test_loss, test_acc, test_top_5_acc) = evaluate_model(self.model, self.test_dataset)
+        
+        print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f})")
         print(f" > Train and test accuracy: (top-1: {train_acc:.4f}, top-5: {train_top_5_acc:.4f}), (top-1: {test_acc:.4f}, top-5: {test_top_5_acc:.4f})")
         
 
@@ -115,8 +128,8 @@ model.compile(
     optimizer=optimizer,
     loss=loss_fn,
     metrics=[
-        keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-        keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+        accuracy_fn,
+        top_5_accuracy_fn,
     ],
 )
 
@@ -132,10 +145,9 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
 
 history = model.fit(
     train_dataset,
-    batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
-    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset), CheckWeightNaNs()],
+    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
 )
 
 loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
