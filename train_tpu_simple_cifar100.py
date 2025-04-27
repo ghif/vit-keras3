@@ -8,6 +8,14 @@ import tensorflow as tf
 import keras
 import dataset
 
+# Constants
+BATCH_SIZE = 128
+LEARNING_RATE = 1e-6
+# WEIGHT_DECAY = 1e-4
+GLOBAL_CLIPNORM = 1.0
+EPOCHS = 2
+MODEL_PREFIX = "mlp_noaug"
+
 # Setup TPU configuration
 try:
     resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu="local")
@@ -129,13 +137,7 @@ def mlp(input_shape, num_classes):
     logits = CheckNumericsLayer("Logits contain NaN or Inf values")(logits)
     return keras.Model(inputs=inputs, outputs=logits)
 
-# Constants
-BATCH_SIZE = 128
-LEARNING_RATE = 1e-6
-# WEIGHT_DECAY = 1e-4
-GLOBAL_CLIPNORM = 1.0
-EPOCHS = 5
-MODEL_PREFIX = "mlp_noaug"
+
 
 # Prepare the data
 input_shape = (32, 32, 3)
@@ -187,14 +189,17 @@ history = model.fit(
     train_dataset,
     epochs=EPOCHS,
     validation_data=test_dataset,
-    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
+    # callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
+    callbacks=[checkpoint_callback],
 )
 
-loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
+loss, accuracy, top_5_accuracy = evaluate_model(model, train_dataset)
+# loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
 print(f"Train loss: {loss}")
 print(f"Train accuracy: {round(accuracy * 100, 2)}%")
 print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
+loss, accuracy, top_5_accuracy = evaluate_model(model, test_dataset)
 loss, accuracy, top_5_accuracy = model.evaluate(test_dataset, batch_size=BATCH_SIZE)
 print(f"Test loss: {loss}")
 print(f"Test accuracy: {round(accuracy * 100, 2)}%")
