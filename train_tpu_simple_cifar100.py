@@ -175,14 +175,14 @@ history = model.fit(
 )
 
 print(f"== Evaluate model ==")
-loss, accuracy, top_5_accuracy = evaluate_model(model, train_dataset)
-# loss, accuracy, top_5_accuracy = model.evaluate(train_dataset)
+# loss, accuracy, top_5_accuracy = evaluate_model(model, train_dataset)
+loss, accuracy, top_5_accuracy = model.evaluate(train_dataset)
 print(f"Train loss: {loss}")
 print(f"Train accuracy: {round(accuracy * 100, 2)}%")
 print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
-loss, accuracy, top_5_accuracy = evaluate_model(model, test_dataset)
-# loss, accuracy, top_5_accuracy = model.evaluate(test_dataset)
+# loss, accuracy, top_5_accuracy = evaluate_model(model, test_dataset)
+loss, accuracy, top_5_accuracy = model.evaluate(test_dataset)
 print(f"Test loss: {loss}")
 print(f"Test accuracy: {round(accuracy * 100, 2)}%")
 print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")

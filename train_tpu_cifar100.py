@@ -54,8 +54,8 @@ train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE,
 # train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True, with_tpu=True)
 # test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
 
-# # Use mixed precision
-# keras.mixed_precision.set_global_policy("mixed_float16")
+# Use mixed precision
+keras.mixed_precision.set_global_policy("mixed_bfloat16")
 
 with strategy.scope():
     vit_model = M.vit_classifier(
