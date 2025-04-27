@@ -70,12 +70,6 @@ with strategy.scope():
         global_clipnorm=GLOBAL_CLIPNORM,
     )
 
-    # optimizer = keras.optimizers.SGD(
-    #     learning_rate=LEARNING_RATE,
-    #     momentum=0.9,
-    #     global_clipnorm=GLOBAL_CLIPNORM,
-    # )
-
     vit_model.compile(
         optimizer=optimizer,
         loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
@@ -85,7 +79,6 @@ with strategy.scope():
         ],
     )
 
-# vit_model.layers[1].adapt(x_train)
 print(vit_model.summary(expand_nested=True))
 
 for i, layer in enumerate(vit_model.layers):
@@ -104,18 +97,17 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
 
 history = vit_model.fit(
     train_dataset,
-    batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
     callbacks=[checkpoint_callback],
 )
 
-loss, accuracy, top_5_accuracy = vit_model.evaluate(train_dataset, batch_size=BATCH_SIZE)
+loss, accuracy, top_5_accuracy = vit_model.evaluate(train_dataset)
 print(f"Train loss: {loss}")
 print(f"Train accuracy: {round(accuracy * 100, 2)}%")
 print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
-loss, accuracy, top_5_accuracy = vit_model.evaluate(test_dataset, batch_size=BATCH_SIZE)
+loss, accuracy, top_5_accuracy = vit_model.evaluate(test_dataset)
 print(f"Test loss: {loss}")
 print(f"Test accuracy: {round(accuracy * 100, 2)}%")
 print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
