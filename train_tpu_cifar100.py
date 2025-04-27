@@ -19,7 +19,7 @@ with open(args.config) as f:
     conf = json.load(f)
 
 # Constants
-MODEL_PREFIX = "vit_base_96_tpu"
+MODEL_PREFIX = "vit_base_96_tpu_aug"
 
 IMAGE_SHAPE = tuple(conf["image_shape"])
 PATCH_SIZE = conf["patch_size"]
@@ -48,18 +48,13 @@ except Exception as e:
     print(f"Failed to initialize TPU: {e}")
 
 # Prepare the data
-input_shape = (32, 32, 3)
-
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, input_shape)
-# train_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=True, with_tpu=True)
-# test_dataset, _ = dataset.get_cifar100(BATCH_SIZE, is_training=False)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=0, augment=True)
 
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_bfloat16")
 
 with strategy.scope():
     vit_model = M.vit_classifier(
-        orig_image_shape=input_shape,
         image_shape=IMAGE_SHAPE,
         patch_size=PATCH_SIZE,
         num_layers=NUM_LAYERS,

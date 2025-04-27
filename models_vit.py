@@ -90,11 +90,6 @@ def mlp_block(x, mlp_dim, dropout_rate):
 #     z = layers.Resizing(image_size, image_size)(z)
 #     return z
 
-# def preprocess(images):
-#     # Normalize the image
-#     z = layers.Normalization()(images)
-#     return z
-
 def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate):
     """
     Create an Encoder 1D block.
