@@ -7,7 +7,7 @@ AUTOTUNE = tf.data.AUTOTUNE
 random_flip = layers.RandomFlip("horizontal")
 random_rotation = layers.RandomRotation(factor=0.1)
 random_zoom = layers.RandomZoom(height_factor=0.2, width_factor=0.2)
-rand_augment = layers.RandAugment(value_range=(0, 1), num_ops=6, factor=0.5)
+rand_augment = layers.RandAugment(value_range=(0, 1), num_ops=3, factor=0.5)
 
 def preprocess_inputs(image, label):
     # image = tf.cast(image, tf.float32)
