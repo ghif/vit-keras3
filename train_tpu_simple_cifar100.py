@@ -154,22 +154,22 @@ with strategy.scope():
         print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
     # Train the model
-    # optimizer = keras.optimizers.SGD(
-    #     learning_rate=LEARNING_RATE,
-    #     momentum=0.9,
-    #     global_clipnorm=GLOBAL_CLIPNORM,
-    # )
-    optimizer = keras.optimizers.Adam(
+    optimizer = keras.optimizers.SGD(
         learning_rate=LEARNING_RATE,
+        momentum=0.9,
         global_clipnorm=GLOBAL_CLIPNORM,
     )
+    # optimizer = keras.optimizers.Adam(
+    #     learning_rate=LEARNING_RATE,
+    #     global_clipnorm=GLOBAL_CLIPNORM,
+    # )
 
     model.compile(
         optimizer=optimizer,
         loss=loss_fn,
         metrics=[
-            accuracy_fn,
-            top_5_accuracy_fn,
+            keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+            keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
         ],
     )
 
@@ -187,8 +187,7 @@ history = model.fit(
     train_dataset,
     epochs=EPOCHS,
     validation_data=test_dataset,
-    # callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
-    callbacks=[checkpoint_callback],
+    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
 )
 
 loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
