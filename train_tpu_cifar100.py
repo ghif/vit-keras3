@@ -33,10 +33,10 @@ BATCH_SIZE = conf["batch_size"]
 EPOCHS = conf["epochs"]
 GLOBAL_CLIPNORM = conf["global_clipnorm"]
 AUGMENT = True
-MIXED_PRECISION = False
+MIXED_PRECISION = True
 
 if AUGMENT:
-    MODEL_PREFIX = "vit_base_96_aug"
+    MODEL_PREFIX = "vit_base_96_aug_v2"
 else:
     MODEL_PREFIX = "vit_base_96_noaug"
 
