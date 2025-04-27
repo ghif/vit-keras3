@@ -58,9 +58,8 @@ def evaluate_model(model, tf_dataset):
         #     print("!!! NaN or Inf detected in predictions !!!")
         #     break
         bs = image.shape[0]
-        print(f"Batch-[{i+1}]: bs = {bs}")
+        # print(f"Batch-[{i+1}]: bs = {bs}")
         
-
         # Check loss
         loss_val = loss_fn_test(label, pred)
         loss += loss_val.numpy()
