@@ -7,6 +7,7 @@ AUTOTUNE = tf.data.AUTOTUNE
 random_flip = layers.RandomFlip("horizontal")
 random_rotation = layers.RandomRotation(factor=0.1)
 random_zoom = layers.RandomZoom(height_factor=0.2, width_factor=0.2)
+rand_augment = layers.RandAugment(value_range=(0, 1), num_ops=6, factor=0.5)
 
 def preprocess_inputs(image, label):
     # image = tf.cast(image, tf.float32)
@@ -59,21 +60,25 @@ def prepare(ds, batch_size, target_image_shape, st_type=-1, shuffle=False, augme
 
     # Use data augmentation only on the training set
     if augment:
-        # Random horizontal flip
-        ds = ds.map(
-            lambda x, y: (random_flip(x), y),
-            num_parallel_calls=AUTOTUNE,
-        )
+        # # Random horizontal flip
+        # ds = ds.map(
+        #     lambda x, y: (random_flip(x), y),
+        #     num_parallel_calls=AUTOTUNE,
+        # )
 
-        # Random rotation
-        ds = ds.map(
-            lambda x, y: (random_rotation(x), y),
-            num_parallel_calls=AUTOTUNE,
-        )
+        # # Random rotation
+        # ds = ds.map(
+        #     lambda x, y: (random_rotation(x), y),
+        #     num_parallel_calls=AUTOTUNE,
+        # )
 
-        # Random zoom
+        # # Random zoom
+        # ds = ds.map(
+        #     lambda x, y: (random_zoom(x), y),
+        #     num_parallel_calls=AUTOTUNE,
+        # )
         ds = ds.map(
-            lambda x, y: (random_zoom(x), y),
+            lambda x, y: (rand_augment(x), y),
             num_parallel_calls=AUTOTUNE,
         )
 
