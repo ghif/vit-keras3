@@ -69,17 +69,17 @@ with strategy.scope():
         dropout_rate=DROPOUT_RATE,
         num_classes=NUM_CLASSES
     )
-    # optimizer = keras.optimizers.Adam(
-    #     learning_rate=LEARNING_RATE,
-    #     weight_decay=WEIGHT_DECAY,
-    #     global_clipnorm=GLOBAL_CLIPNORM,
-    # )
-
-    optimizer = keras.optimizers.SGD(
+    optimizer = keras.optimizers.Adam(
         learning_rate=LEARNING_RATE,
-        momentum=0.9,
+        weight_decay=WEIGHT_DECAY,
         global_clipnorm=GLOBAL_CLIPNORM,
     )
+
+    # optimizer = keras.optimizers.SGD(
+    #     learning_rate=LEARNING_RATE,
+    #     momentum=0.9,
+    #     global_clipnorm=GLOBAL_CLIPNORM,
+    # )
 
     vit_model.compile(
         optimizer=optimizer,
