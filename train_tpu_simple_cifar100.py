@@ -99,21 +99,6 @@ class EvaluationCallback(keras.callbacks.Callback):
         print(f" > Train and test losses: ({train_loss:.4f}, {test_loss:.4f})")
         print(f" > Train and test accuracy: (top-1: {train_acc:.4f}, top-5: {train_top_5_acc:.4f}), (top-1: {test_acc:.4f}, top-5: {test_top_5_acc:.4f})")
 
-# Define a custom layer to wrap tf.debugging.check_numerics
-class CheckNumericsLayer(keras.layers.Layer):
-    def __init__(self, message, **kwargs):
-        super().__init__(**kwargs)
-        self.message = message
-
-    def call(self, inputs):
-        return tf.debugging.check_numerics(inputs, self.message)
-
-    # Optional: Add get_config for serialization if needed
-    def get_config(self):
-        config = super().get_config()
-        config.update({"message": self.message})
-        return config
-
 class CheckWeightNaNs(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         print(f"\nChecking weights for NaNs at end of epoch {epoch+1}...")
@@ -192,13 +177,13 @@ history = model.fit(
 
 print(f"== Evaluate model ==")
 loss, accuracy, top_5_accuracy = evaluate_model(model, train_dataset)
-# loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
+# loss, accuracy, top_5_accuracy = model.evaluate(train_dataset)
 print(f"Train loss: {loss}")
 print(f"Train accuracy: {round(accuracy * 100, 2)}%")
 print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
 loss, accuracy, top_5_accuracy = evaluate_model(model, test_dataset)
-loss, accuracy, top_5_accuracy = model.evaluate(test_dataset, batch_size=BATCH_SIZE)
+# loss, accuracy, top_5_accuracy = model.evaluate(test_dataset)
 print(f"Test loss: {loss}")
 print(f"Test accuracy: {round(accuracy * 100, 2)}%")
 print(f"Test top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
