@@ -21,8 +21,6 @@ with open(args.config) as f:
     conf = json.load(f)
 
 # Constants
-
-
 IMAGE_SHAPE = tuple(conf["image_shape"])
 PATCH_SIZE = conf["patch_size"]
 NUM_LAYERS = conf["num_layers"]
@@ -36,7 +34,6 @@ WEIGHT_DECAY = conf["weight_decay"]
 BATCH_SIZE = conf["batch_size"]
 EPOCHS = conf["epochs"]
 GLOBAL_CLIPNORM = conf["global_clipnorm"]
-
 AUGMENT = True
 
 if AUGMENT:
