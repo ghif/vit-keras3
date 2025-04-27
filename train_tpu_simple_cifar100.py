@@ -9,11 +9,11 @@ import keras
 import dataset
 
 # Constants
-BATCH_SIZE = 128
-LEARNING_RATE = 1e-6
+BATCH_SIZE = 512
+LEARNING_RATE = 1e-4
 # WEIGHT_DECAY = 1e-4
 GLOBAL_CLIPNORM = 1.0
-EPOCHS = 2
+EPOCHS = 10
 MODEL_PREFIX = "mlp_noaug"
 
 # Setup TPU configuration
