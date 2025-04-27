@@ -49,16 +49,17 @@ def evaluate_model(model, tf_dataset):
 
     n_samples = 0
     
-    for batch in tf_dataset: 
+    for i, batch in enumerate(tf_dataset):
         image, label = batch
         pred = model.predict(image, verbose=None)
-        
+
         # # Check for NaN or Inf in predictions
         # if np.isnan(pred).any() or np.isinf(pred).any():
         #     print("!!! NaN or Inf detected in predictions !!!")
         #     break
-
         bs = image.shape[0]
+        print(f"Batch-[{i+1}]: bs = {bs}")
+        
 
         # Check loss
         loss_val = loss_fn_test(label, pred)
