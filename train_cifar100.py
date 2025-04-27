@@ -70,7 +70,7 @@ for i, layer in enumerate(vit_model.layers):
     print(f"[{i}] {layer.name} - {layer.dtype_policy}")
 
 # Train the model
-optimizer = keras.optimizers.Adam(
+optimizer = keras.optimizers.AdamW(
     learning_rate=LEARNING_RATE,
     weight_decay=WEIGHT_DECAY,
     global_clipnorm=GLOBAL_CLIPNORM,
