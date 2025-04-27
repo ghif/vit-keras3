@@ -188,6 +188,7 @@ history = model.fit(
     callbacks=[checkpoint_callback],
 )
 
+print(f"== Evaluate model ==")
 loss, accuracy, top_5_accuracy = evaluate_model(model, train_dataset)
 # loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
 print(f"Train loss: {loss}")
