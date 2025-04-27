@@ -187,7 +187,8 @@ history = model.fit(
     train_dataset,
     epochs=EPOCHS,
     validation_data=test_dataset,
-    callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
+    # callbacks=[checkpoint_callback, EvaluationCallback(train_dataset, test_dataset)],
+    callbacks=[checkpoint_callback],
 )
 
 loss, accuracy, top_5_accuracy = model.evaluate(train_dataset, batch_size=BATCH_SIZE)
