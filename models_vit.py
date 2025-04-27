@@ -59,40 +59,41 @@ def mlp_block(x, mlp_dim, dropout_rate):
     y = layers.Dropout(dropout_rate)(y)
     return y
 
-def augment_and_resize(images, image_size):
-    """
-    Apply data augmentation and resize the input images.
+# def augment_and_resize(images, image_size):
+#     """
+#     Apply data augmentation and resize the input images.
 
-    Args:
-        images (Tensor): A batch of images with shape (batch_size, height, width, channels).
-        image_size (int): The size of the output images.
-    Returns:
-        Tensor: The augmented and resized batch of images.
-    """
-    z = layers.Normalization()(images)
-    z = layers.Resizing(image_size, image_size)(z)
-    z = layers.RandomFlip("horizontal")(z)
-    z = layers.RandomRotation(factor=0.02)(z)
-    z = layers.RandomZoom(height_factor=0.2, width_factor=0.2)(z)
-    return z
+#     Args:
+#         images (Tensor): A batch of images with shape (batch_size, height, width, channels).
+#         image_size (int): The size of the output images.
+#     Returns:
+#         Tensor: The augmented and resized batch of images.
+#     """
+#     z = layers.Normalization()(images)
+#     z = layers.Resizing(image_size, image_size)(z)
+#     z = layers.RandomFlip("horizontal")(z)
+#     z = layers.RandomRotation(factor=0.02)(z)
+#     z = layers.RandomZoom(height_factor=0.2, width_factor=0.2)(z)
+#     return z
 
-def normalize_and_resize(images, image_size):
-    """
-    Normalize and resize the input images.
+# def normalize_and_resize(images, image_size):
+#     """
+#     Normalize and resize the input images.
 
-    Args:
-        images (Tensor): A batch of images with shape (batch_size, height, width, channels).
-        image_size (int): The size of the output images.
-    Returns:
-        Tensor: The normalized and resized batch of images.
-    """
-    z = layers.Normalization()(images)
-    z = layers.Resizing(image_size, image_size)(z)
-    return z
+#     Args:
+#         images (Tensor): A batch of images with shape (batch_size, height, width, channels).
+#         image_size (int): The size of the output images.
+#     Returns:
+#         Tensor: The normalized and resized batch of images.
+#     """
+#     z = layers.Normalization()(images)
+#     z = layers.Resizing(image_size, image_size)(z)
+#     return z
 
-def preprocess(images):
-    z = layers.Normalization()(images)
-    return z
+# def preprocess(images):
+#     # Normalize the image
+#     z = layers.Normalization()(images)
+#     return z
 
 def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_rate, dropout_rate):
     """
@@ -178,8 +179,8 @@ def vit_backbone(image_shape, patch_size, num_layers, num_heads, mlp_dim, attent
     inputs = keras.Input(shape=image_shape)
     # augmented = augment_and_resize(inputs, image_shape[0])
     # augmented = normalize_and_resize(inputs, image_shape[0])
-    preprocessed_inputs = preprocess(inputs)
-    patches = extract_patches(preprocessed_inputs, patch_size)
+    # preprocessed_inputs = preprocess(inputs)
+    patches = extract_patches(inputs, patch_size)
     encoded_patches = encode_patches(patches, num_patches, hidden_dim)
 
     y = vit_encoder(

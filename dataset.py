@@ -2,9 +2,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import keras
 
-def check_data_numerics(image, label):
-   tf.debugging.check_numerics(image, f"Data check failed for image")
-   return image, label
+AUTOTUNE = tf.data.AUTOTUNE
 
 def preprocess_inputs(image, label):
     # image = tf.cast(image, tf.float32)
@@ -18,37 +16,72 @@ def prepare_cifar100_simple(batch_size, autotune=tf.data.AUTOTUNE):
 
     train_dataset = train_dataset.shuffle(
       10 * batch_size, reshuffle_each_iteration=True
-    ).map(preprocess_inputs, num_parallel_calls=autotune).map(check_data_numerics, num_parallel_calls=autotune)
-    
-    train_dataset = train_dataset.batch(batch_size)
-
-    test_dataset = test_dataset.map(preprocess_inputs, num_parallel_calls=autotune).map(check_data_numerics, num_parallel_calls=autotune)
-    test_dataset = test_dataset.batch(batch_size)
-    
-    # test_dataset = test_dataset.prefetch(autotune)
-    return train_dataset, test_dataset, dataset_info
-    
-def prepare_cifar100(batch_size, target_image_shape, autotune=tf.data.AUTOTUNE):
-    data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
-    train_dataset = data["train"]
-    test_dataset = data["test"]
-    
-    resizing = keras.layers.Resizing(
-      target_image_shape[0], target_image_shape[1], crop_to_aspect_ratio=True
-    )
-
-    def preprocess_inputs(image, label):
-      image = tf.cast(image, tf.float32)
-      return resizing(image), label
-    
-    train_dataset = train_dataset.shuffle(
-      10 * batch_size, reshuffle_each_iteration=True
     ).map(preprocess_inputs, num_parallel_calls=autotune)
-
+    
     train_dataset = train_dataset.batch(batch_size)
 
     test_dataset = test_dataset.map(preprocess_inputs, num_parallel_calls=autotune)
     test_dataset = test_dataset.batch(batch_size)
+    
+    # test_dataset = test_dataset.prefetch(autotune)
+    return train_dataset, test_dataset, dataset_info
+   
+def prepare(ds, batch_size, target_image_shape, st_type=-1, shuffle=False, augment=False):
+    
+    def preprocess(image, label):
+        image = tf.cast(image, tf.float32)
+
+        # Resize the image to the target size
+        image = tf.image.resize(image, [target_image_shape[0], target_image_shape[1]])
+        
+        if st_type >= 0:
+            if st_type == 0:
+                # Rescale the image to [0, 1]
+                print(f"Rescale the image to [0, 1]")
+                image = (image / 255.0)
+            elif st_type == 1:
+                # Per image standardization
+                image = tf.image.per_image_standardization(image)
+        
+        return image, label
+    
+    # Resize and rescale all images
+    ds = ds.map(preprocess, num_parallel_calls=AUTOTUNE)
+
+    if shuffle:
+        ds = ds.shuffle(1000)
+
+    # Batch all datasets
+    ds = ds.batch(batch_size)
+
+    # Use data augmentation only on the training set
+
+    # Use buffered prefetching on all datasets
+    ds = ds.prefetch(buffer_size=AUTOTUNE)
+
+    return ds
+  
+def prepare_cifar100(batch_size, target_image_shape, st_type=0):
+    data, dataset_info = tfds.load("cifar100", with_info=True, as_supervised=True)
+    train_dataset = data["train"]
+    test_dataset = data["test"]
+
+    train_dataset = prepare(
+        train_dataset, 
+        batch_size, 
+        target_image_shape, 
+        st_type=st_type, 
+        shuffle=True, 
+        augment=True
+    )
+    test_dataset = prepare(
+        test_dataset, 
+        batch_size, 
+        target_image_shape, 
+        st_type=st_type, 
+        shuffle=False, 
+        augment=False
+    )
 
     return train_dataset, test_dataset, dataset_info
 

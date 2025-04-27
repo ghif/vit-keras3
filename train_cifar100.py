@@ -38,7 +38,7 @@ EPOCHS = conf["epochs"]
 GLOBAL_CLIPNORM = conf["global_clipnorm"]
 
 # Prepare the data
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=0)
 
 # Get all image samples from train_dataset to calculate mean and std
 X_train = []
@@ -60,9 +60,6 @@ vit_model = M.vit_classifier(
     dropout_rate=DROPOUT_RATE,
     num_classes=NUM_CLASSES
 )
-
-# Calculate mean and std
-vit_model.layers[1].layers[1].adapt(X_train)
 
 # Print model
 print(vit_model.summary(expand_nested=True))
@@ -98,7 +95,6 @@ checkpoint_callback = keras.callbacks.ModelCheckpoint(
 
 history = vit_model.fit(
     train_dataset,
-    batch_size=BATCH_SIZE,
     epochs=EPOCHS,
     validation_data=test_dataset,
     callbacks=[checkpoint_callback],
