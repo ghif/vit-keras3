@@ -41,7 +41,6 @@ def prepare(ds, batch_size, target_image_shape, st_type=-1, shuffle=False, augme
         if st_type >= 0:
             if st_type == 0:
                 # Rescale the image to [0, 1]
-                print(f"Rescale the image to [0, 1]")
                 image = (image / 255.0)
             elif st_type == 1:
                 # Per image standardization
