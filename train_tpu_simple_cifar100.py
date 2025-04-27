@@ -22,7 +22,7 @@ except Exception as e:
 
 loss_fn_test = keras.losses.SparseCategoricalCrossentropy(
     from_logits=True,
-    reduction=None
+    reduction="sum"
 )
 
 class EvaluationCallback(keras.callbacks.Callback):
