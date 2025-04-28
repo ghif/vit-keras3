@@ -38,7 +38,7 @@ AUGMENT = True
 MIXED_PRECISION = True
 
 if AUGMENT:
-    MODEL_PREFIX = "vit_base_96_aug_v3"
+    MODEL_PREFIX = "vit_base_96_aug_v2"
 else:
     MODEL_PREFIX = "vit_base_96_noaug"
 

@@ -60,27 +60,27 @@ def prepare(ds, batch_size, target_image_shape, st_type=-1, shuffle=False, augme
 
     # Use data augmentation only on the training set
     if augment:
-        # # Random horizontal flip
-        # ds = ds.map(
-        #     lambda x, y: (random_flip(x), y),
-        #     num_parallel_calls=AUTOTUNE,
-        # )
-
-        # # Random rotation
-        # ds = ds.map(
-        #     lambda x, y: (random_rotation(x), y),
-        #     num_parallel_calls=AUTOTUNE,
-        # )
-
-        # # Random zoom
-        # ds = ds.map(
-        #     lambda x, y: (random_zoom(x), y),
-        #     num_parallel_calls=AUTOTUNE,
-        # )
+        # Random horizontal flip
         ds = ds.map(
-            lambda x, y: (rand_augment(x), y),
+            lambda x, y: (random_flip(x), y),
             num_parallel_calls=AUTOTUNE,
         )
+
+        # Random rotation
+        ds = ds.map(
+            lambda x, y: (random_rotation(x), y),
+            num_parallel_calls=AUTOTUNE,
+        )
+
+        # Random zoom
+        ds = ds.map(
+            lambda x, y: (random_zoom(x), y),
+            num_parallel_calls=AUTOTUNE,
+        )
+        # ds = ds.map(
+        #     lambda x, y: (rand_augment(x), y),
+        #     num_parallel_calls=AUTOTUNE,
+        # )
 
     # Use buffered prefetching on all datasets
     ds = ds.prefetch(buffer_size=AUTOTUNE)
