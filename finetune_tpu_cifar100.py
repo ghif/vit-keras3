@@ -35,7 +35,7 @@ try:
     print("All devices: ", tf.config.list_logical_devices('TPU'))
 except Exception as e:
     print(f"Failed to initialize TPU: {e}")
-    
+
 
 def lr_warmup_cosine_decay(
     global_step,
@@ -97,12 +97,18 @@ LEARNING_RATE = conf["learning_rate"]
 WEIGHT_DECAY = conf["weight_decay"]
 BATCH_SIZE = conf["batch_size"]
 EPOCHS = conf["epochs"]
+AUGMENT = False
+MIXED_PRECISION = True
 
-MODEL_PREFIX = "vit_base_224_tpu_finetuned_aug"
+if AUGMENT:
+    MODEL_PREFIX = "vit_base_224_tpu_finetuned_aug"
+else:
+    MODEL_PREFIX = "vit_base_224_tpu_finetuned"
+
 BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 # Prepare the data
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=-1, augment=True)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=-1, augment=AUGMENT)
 # prepare_cifar100(batch_size, target_image_shape, st_type=0, augment=False)
 
 # # Check training images
@@ -112,8 +118,9 @@ train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE,
 orig_image_shape = dataset_info.features["image"].shape
 num_classes = dataset_info.features["label"].num_classes
 
-# Use mixed precision
-keras.mixed_precision.set_global_policy("mixed_bfloat16")
+if MIXED_PRECISION:
+    # Use mixed precision
+    keras.mixed_precision.set_global_policy("mixed_bfloat16")
 
 
 steps_per_epoch = dataset_info.splits["train"].num_examples // BATCH_SIZE

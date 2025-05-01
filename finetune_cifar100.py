@@ -113,6 +113,7 @@ image_classifier = keras_hub.models.ViTImageClassifier(
     num_classes=num_classes,
     preprocessor=preprocessor,
 )
+
 # Set DType Policy float32 for last layer
 last_layer = image_classifier.layers[-1]
 last_layer.dtype_policy = keras.mixed_precision.Policy("float32")
