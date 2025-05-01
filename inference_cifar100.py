@@ -67,29 +67,29 @@ image_classifier = keras_hub.models.ViTImageClassifier(
 last_layer = image_classifier.layers[-1]
 last_layer.dtype_policy = keras.mixed_precision.Policy("float32")
 
-# steps_per_epoch = dataset_info.splits["train"].num_examples // BATCH_SIZE
-# print(f"Steps per epoch: {steps_per_epoch}")
-# lr_schedule = get_cosine_decay_schedule(
-#     start_lr=LEARNING_RATE,
-#     num_epochs=EPOCHS,
-#     steps_per_epoch=steps_per_epoch
-# )
-# # Finetune the classifier with SGD optimizer
-# optimizer = keras.optimizers.SGD(
-#     learning_rate=lr_schedule, 
-#     momentum=0.9,
-#     global_clipnorm=1.0
+steps_per_epoch = dataset_info.splits["train"].num_examples // BATCH_SIZE
+print(f"Steps per epoch: {steps_per_epoch}")
+lr_schedule = get_cosine_decay_schedule(
+    start_lr=LEARNING_RATE,
+    num_epochs=EPOCHS,
+    steps_per_epoch=steps_per_epoch
+)
+# Finetune the classifier with SGD optimizer
+optimizer = keras.optimizers.SGD(
+    learning_rate=lr_schedule, 
+    momentum=0.9,
+    global_clipnorm=1.0
 
-# )
+)
 
-# image_classifier.compile(
-#     optimizer=optimizer,
-#     loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-#     metrics=[
-#         keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-#         keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
-#     ],
-# )
+image_classifier.compile(
+    optimizer=optimizer,
+    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    metrics=[
+        keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+        keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+    ],
+)
 print(image_classifier.summary(expand_nested=True))
 
 # Load trained weights
