@@ -104,7 +104,6 @@ def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_ra
         Output tensor.
     """
     # Layer normalization 1
-    # x = layers.LayerNormalization(epsilon=1e-6)(inputs)
     x = layers.LayerNormalization(epsilon=1e-3)(inputs)
 
     key_dim = hidden_dim // num_heads
@@ -123,7 +122,6 @@ def encoder1d_block(inputs, num_heads, hidden_dim, mlp_dim, attention_dropout_ra
     x = x + inputs
 
     # MLP block
-    # y = layers.LayerNormalization(epsilon=1e-6)(x)
     y = layers.LayerNormalization(epsilon=1e-3)(x)
     y = mlp_block(y, mlp_dim, dropout_rate)
     

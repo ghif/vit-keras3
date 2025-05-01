@@ -84,11 +84,12 @@ class WarmUpCosineDecay(schedules.LearningRateSchedule):
 
 # Contants
 AUTOTUNE = tf.data.AUTOTUNE
-MODEL_PREFIX = "vit_base_224_finetuned_v3"
+MODEL_PREFIX = "vit_base_224_finetuned_aug"
 BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 # Prepare the data
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE)
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=-1, augment=True)
+# prepare_cifar100(batch_size, target_image_shape, st_type=0, augment=False)
 
 # # Check training images
 # images = next(iter(train_dataset.take(1)))[0]
