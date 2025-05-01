@@ -97,7 +97,7 @@ LEARNING_RATE = conf["learning_rate"]
 WEIGHT_DECAY = conf["weight_decay"]
 BATCH_SIZE = conf["batch_size"]
 EPOCHS = conf["epochs"]
-AUGMENT = False
+AUGMENT = True
 MIXED_PRECISION = True
 
 if AUGMENT:

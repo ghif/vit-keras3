@@ -101,12 +101,12 @@ num_classes = dataset_info.features["label"].num_classes
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
 
-backbone = keras_hub.models.Backbone.from_preset(BASE_MODEL)
-backbone.trainable = False
-
 preprocessor = keras_hub.models.ViTImageClassifierPreprocessor.from_preset(
     BASE_MODEL
 )
+
+backbone = keras_hub.models.Backbone.from_preset(BASE_MODEL)
+backbone.trainable = False
 
 image_classifier = keras_hub.models.ViTImageClassifier(
     backbone=backbone,

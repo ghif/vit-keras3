@@ -42,10 +42,10 @@ BASE_MODEL = "vit_base_patch16_224_imagenet"
 
 
 # Prepare data
-train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(
-    batch_size=BATCH_SIZE, target_image_shape=IMAGE_SHAPE
-)
-
+# train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(
+#     batch_size=BATCH_SIZE, target_image_shape=IMAGE_SHAPE
+# )
+train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=-1, augment=False)
 
 num_classes = dataset_info.features["label"].num_classes
 
@@ -67,39 +67,38 @@ image_classifier = keras_hub.models.ViTImageClassifier(
 last_layer = image_classifier.layers[-1]
 last_layer.dtype_policy = keras.mixed_precision.Policy("float32")
 
-steps_per_epoch = dataset_info.splits["train"].num_examples // BATCH_SIZE
-print(f"Steps per epoch: {steps_per_epoch}")
-lr_schedule = get_cosine_decay_schedule(
-    start_lr=LEARNING_RATE,
-    num_epochs=EPOCHS,
-    steps_per_epoch=steps_per_epoch
-)
-# Finetune the classifier with SGD optimizer
-optimizer = keras.optimizers.SGD(
-    learning_rate=lr_schedule, 
-    momentum=0.9,
-    global_clipnorm=1.0
+# steps_per_epoch = dataset_info.splits["train"].num_examples // BATCH_SIZE
+# print(f"Steps per epoch: {steps_per_epoch}")
+# lr_schedule = get_cosine_decay_schedule(
+#     start_lr=LEARNING_RATE,
+#     num_epochs=EPOCHS,
+#     steps_per_epoch=steps_per_epoch
+# )
+# # Finetune the classifier with SGD optimizer
+# optimizer = keras.optimizers.SGD(
+#     learning_rate=lr_schedule, 
+#     momentum=0.9,
+#     global_clipnorm=1.0
 
-)
+# )
 
-image_classifier.compile(
-    optimizer=optimizer,
-    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    metrics=[
-        keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-        keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
-    ],
-)
-
+# image_classifier.compile(
+#     optimizer=optimizer,
+#     loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+#     metrics=[
+#         keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+#         keras.metrics.SparseTopKCategoricalAccuracy(5, name="top-5-accuracy"),
+#     ],
+# )
 print(image_classifier.summary(expand_nested=True))
 
 # Load trained weights
 image_classifier.load_weights("models/vit_base_224_finetuned_cifar100.weights.h5")
 
-loss, accuracy, top_5_accuracy = image_classifier.evaluate(train_dataset)
-print(f"Train loss: {loss}")
-print(f"Train accuracy: {round(accuracy * 100, 2)}%")
-print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
+# loss, accuracy, top_5_accuracy = image_classifier.evaluate(train_dataset)
+# print(f"Train loss: {loss}")
+# print(f"Train accuracy: {round(accuracy * 100, 2)}%")
+# print(f"Train top 5 accuracy: {round(top_5_accuracy * 100, 2)}%")
 
 loss, accuracy, top_5_accuracy = image_classifier.evaluate(test_dataset)
 print(f"Test loss: {loss}")
