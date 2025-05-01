@@ -93,7 +93,8 @@ last_layer.dtype_policy = keras.mixed_precision.Policy("float32")
 print(image_classifier.summary(expand_nested=True))
 
 # Load trained weights
-image_classifier.load_weights("models/vit_base_224_finetuned_cifar100.weights.h5")
+# image_classifier.load_weights("models/vit_base_224_finetuned_cifar100.weights.h5")
+image_classifier.load_weights("models/vit_base_224_tpu_finetuned_aug_cifar100.weights.h5")
 
 # loss, accuracy, top_5_accuracy = image_classifier.evaluate(train_dataset)
 # print(f"Train loss: {loss}")

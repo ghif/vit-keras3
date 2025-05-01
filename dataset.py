@@ -32,7 +32,6 @@ def prepare_cifar100_simple(batch_size, autotune=tf.data.AUTOTUNE):
     return train_dataset, test_dataset, dataset_info
    
 def prepare(ds, batch_size, target_image_shape, st_type=-1, shuffle=False, augment=False):
-    
     def preprocess(image, label):
         image = tf.cast(image, tf.float32)
 
@@ -77,10 +76,6 @@ def prepare(ds, batch_size, target_image_shape, st_type=-1, shuffle=False, augme
             lambda x, y: (random_zoom(x), y),
             num_parallel_calls=AUTOTUNE,
         )
-        # ds = ds.map(
-        #     lambda x, y: (rand_augment(x), y),
-        #     num_parallel_calls=AUTOTUNE,
-        # )
 
     # Use buffered prefetching on all datasets
     ds = ds.prefetch(buffer_size=AUTOTUNE)
