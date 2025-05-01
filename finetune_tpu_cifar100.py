@@ -24,6 +24,19 @@ with open(args.config) as f:
     conf = json.load(f)
 
 
+# Setup TPU configuration
+try:
+    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu="local")
+
+    tf.config.experimental_connect_to_cluster(resolver)
+    tf.tpu.experimental.initialize_tpu_system(resolver)
+    strategy = tf.distribute.TPUStrategy(resolver)
+    print("Successfully initialized TPU.")
+    print("All devices: ", tf.config.list_logical_devices('TPU'))
+except Exception as e:
+    print(f"Failed to initialize TPU: {e}")
+    
+
 def lr_warmup_cosine_decay(
     global_step,
     warmup_steps,
@@ -87,18 +100,6 @@ EPOCHS = conf["epochs"]
 
 MODEL_PREFIX = "vit_base_224_tpu_finetuned_aug"
 BASE_MODEL = "vit_base_patch16_224_imagenet"
-
-# Setup TPU configuration
-try:
-    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu="local")
-
-    tf.config.experimental_connect_to_cluster(resolver)
-    tf.tpu.experimental.initialize_tpu_system(resolver)
-    strategy = tf.distribute.TPUStrategy(resolver)
-    print("Successfully initialized TPU.")
-    print("All devices: ", tf.config.list_logical_devices('TPU'))
-except Exception as e:
-    print(f"Failed to initialize TPU: {e}")
 
 # Prepare the data
 train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=-1, augment=True)
