@@ -17,7 +17,7 @@ TOP_K = 5
 # Use mixed precision
 keras.mixed_precision.set_global_policy("mixed_float16")
 
-# Load CIFAR100 dataset
+# Load CIFAR100 dataset, only to get the info
 train_dataset, test_dataset, dataset_info = dataset.prepare_cifar100(BATCH_SIZE, IMAGE_SHAPE, st_type=-1, augment=False)
 num_classes = dataset_info.features["label"].num_classes
 class_names = dataset_info.features["label"].names
@@ -89,7 +89,7 @@ def predict_image(input_image: Image.Image):
 # --- Create Gradio Interface ---
 demo = gr.Interface(
     fn=predict_image,
-    inputs=gr.Image(type="pil", label="Upload Image"), # Input is a PIL Image
+    inputs=gr.Image(type="pil", label="Input Image"), # Input is a PIL Image
     outputs=gr.Label(num_top_classes=TOP_K, label="Prediction"), # Output is a Label component
     title="ViT Image Classification Demo",
     description="Upload an image and the model will predict its class.",

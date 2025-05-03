@@ -207,11 +207,8 @@ def vit_classifier(image_shape, patch_size, num_layers, num_heads, mlp_dim, atte
         dropout_rate=dropout_rate
     )
     inputs = backbone.inputs
-
     features = backbone(inputs)
-
     h = layers.GlobalAveragePooling1D()(features)
-
     h = layers.Dropout(dropout_rate)(h)
     logits = layers.Dense(num_classes, dtype="float32")(h)
 

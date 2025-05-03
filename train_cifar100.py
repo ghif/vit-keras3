@@ -3,10 +3,8 @@ os.environ["KERAS_BACKEND"] = "tensorflow"
 
 import json
 import argparse
-import numpy as np
 
 import keras
-import tensorflow_datasets as tfds
 
 import models_vit as M
 import dataset
@@ -38,7 +36,7 @@ AUGMENT = True
 MIXED_PRECISION = True
 
 if AUGMENT:
-    MODEL_PREFIX = "vit_base_96_aug_v2"
+    MODEL_PREFIX = "vit_base_96_aug_temp"
 else:
     MODEL_PREFIX = "vit_base_96_noaug"
 
